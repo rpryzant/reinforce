@@ -1,8 +1,7 @@
 """
- bricka (a breakout clone)
- Developed by Leonel Machava <leonelmachava@gmail.com>
+Breakout
+ Adapted from Leonel Machava's implementation
 
- http://codeNtronix.com
 """
 import sys
 import pygame
@@ -12,7 +11,7 @@ SCREEN_SIZE   = 640,480
 # Object dimensions
 BRICK_WIDTH   = 60
 BRICK_HEIGHT  = 15
-PADDLE_WIDTH  = 60
+PADDLE_WIDTH  = 80
 PADDLE_HEIGHT = 12
 BALL_DIAMETER = 16
 BALL_RADIUS   = BALL_DIAMETER / 2
@@ -36,11 +35,13 @@ STATE_PLAYING = 1
 STATE_WON = 2
 STATE_GAME_OVER = 3
 
+
 class Bricka:
 
     def __init__(self):
         pygame.init()
         
+
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         pygame.display.set_caption("bricka (a breakout clone by codeNtronix.com)")
         
@@ -57,12 +58,14 @@ class Bricka:
     def init_game(self):
         self.lives = 3
         self.score = 0
+        self.num_hits = 0
+        self.speed_multiplyer = 1.0
         self.state = STATE_BALL_IN_PADDLE
 
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
 
-        self.ball_vel = [5,-5]
+        self.ball_vel = [5, 5]
 
         self.create_bricks()
         
@@ -85,24 +88,25 @@ class Bricka:
         keys = pygame.key.get_pressed()
         
         if keys[pygame.K_LEFT]:
-            self.paddle.left -= 5
+            self.paddle.left -= 7
             if self.paddle.left < 0:
                 self.paddle.left = 0
 
         if keys[pygame.K_RIGHT]:
-            self.paddle.left += 5
+            self.paddle.left += 7
             if self.paddle.left > MAX_PADDLE_X:
                 self.paddle.left = MAX_PADDLE_X
 
         if keys[pygame.K_SPACE] and self.state == STATE_BALL_IN_PADDLE:
-            self.ball_vel = [5,-5]
+            self.ball_vel = [5,5]
+            self.speed_multiplyer = 1.0
             self.state = STATE_PLAYING
         elif keys[pygame.K_RETURN] and (self.state == STATE_GAME_OVER or self.state == STATE_WON):
             self.init_game()
 
     def move_ball(self):
-        self.ball.left += self.ball_vel[0]
-        self.ball.top  += self.ball_vel[1]
+        self.ball.x += self.ball_vel[0] * self.speed_multiplyer
+        self.ball.y  += self.ball_vel[1] * self.speed_multiplyer
 
         if self.ball.left <= 0:
             self.ball.left = 0
@@ -122,15 +126,19 @@ class Bricka:
         for brick in self.bricks:
             if self.ball.colliderect(brick):
                 self.score += 3
+                self.num_hits += 1
                 self.ball_vel[1] = -self.ball_vel[1]
                 self.bricks.remove(brick)
+                self.speed_multiplyer = min(self.speed_multiplyer + 0.1, 2.5)
                 break
 
         if len(self.bricks) == 0:
             self.state = STATE_WON
             
         if self.ball.colliderect(self.paddle):
+            distance_from_center = float(self.ball.centerx - self.paddle.centerx)
             self.ball.top = PADDLE_Y - BALL_DIAMETER
+            self.ball_vel[0] += distance_from_center / 7
             self.ball_vel[1] = -self.ball_vel[1]
         elif self.ball.top > self.paddle.top:
             self.lives -= 1
