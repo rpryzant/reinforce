@@ -27,6 +27,8 @@
   * berkeley
     * https://www.youtube.com/watch?v=IXuHxkpO5E8
     * https://www.youtube.com/watch?v=yNeSFbE1jdY
+  * deepmind course
+    * http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching.html
 * a group last year did reinforcement learning
   * http://web.stanford.edu/class/cs221/restricted/projects/piq93/final.pdf
   * http://web.stanford.edu/class/cs221/restricted/projects/piq93/poster.pdf
