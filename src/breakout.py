@@ -35,7 +35,7 @@ STATE_WON = 2
 STATE_GAME_OVER = 3
 
 
-class Breakout:
+class Breakout(object):
 
     def __init__(self):
         pygame.init()
@@ -206,5 +206,21 @@ class Breakout:
 
             pygame.display.flip()
 
+
+
+class HumanControlledBreakout(Breakout):
+    """ TODO - move input recognizing logic, and run here """
+    def __init__(self):
+        super(HumanControlledBreakout, self).__init__()
+
+
+
+class BotControlledBreakout(Breakout):
+    """ TODO - create state vectors, don't have run draw stuff, give state vectors to learning agent (in another file""" 
+    def __init__(self):
+        super(BotControlledBreakout, self).__init__()
+
+
+
 if __name__ == "__main__":
-    Breakout().run()
+    HumanControlledBreakout().run()
