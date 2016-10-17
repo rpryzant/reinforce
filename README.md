@@ -1,7 +1,7 @@
 ## Final project for cs221 - AI
 
 ### project description
-* algo: Q Learning with function approximation
+* algo: Q Learning with function approximation? policy gradients?
 
 
 ## Questions for percy
