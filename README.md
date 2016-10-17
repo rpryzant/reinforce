@@ -1,5 +1,8 @@
 ## Final project for cs221 - AI
 
+### project description
+* algo: Q Learning with function approximation
+
 
 ## Questions for percy
 
