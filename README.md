@@ -16,6 +16,7 @@
 
 
 ## inspiration/resources
+* rl textbook: https://webdocs.cs.ualberta.ca/~sutton/book/ebook/the-book.html
 * reinforcement learning lectures/articles/notes
   * http://cs229.stanford.edu/notes/cs229-notes12.pdf
   * https://www.nervanasys.com/demystifying-deep-reinforcement-learning/
