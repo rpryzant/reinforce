@@ -5,7 +5,7 @@
 
 
 ## Questions for percy
-
+* we should be doing model free learning, right?
 * what to use as states? need to capture 
   * paddle pos
   * ball pos & movement
