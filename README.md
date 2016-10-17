@@ -7,7 +7,7 @@
   * paddle pos
   * ball pos & movement
   * remaining brick positions
-  * discretize state space for ball pos + movement?
+  * discretize state space for ball pos + movement? (called *tile coding*)
 * will q-learning be enough? big(ish) temporal difference between good action (hitting ball w right angle) and reward (points)
 
 
