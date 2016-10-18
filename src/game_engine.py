@@ -1,40 +1,19 @@
 """
 Breakout
+
+
+TODO
+   - give each input its own constant
+   - finish implementing baseline
+   - make ball reset velocity vector when it gets set back in paddle
+
 """
 import sys
 import pygame
 import abc
 import math
-
-SCREEN_SIZE   = 640,480
-
-# Object dimensions
-BRICK_WIDTH   = 60
-BRICK_HEIGHT  = 15
-PADDLE_WIDTH  = 80
-PADDLE_HEIGHT = 12
-BALL_DIAMETER = 16
-BALL_RADIUS   = BALL_DIAMETER / 2
-
-MAX_PADDLE_X = SCREEN_SIZE[0] - PADDLE_WIDTH
-MAX_BALL_X   = SCREEN_SIZE[0] - BALL_DIAMETER
-MAX_BALL_Y   = SCREEN_SIZE[1] - BALL_DIAMETER
-
-# Paddle Y coordinate
-PADDLE_Y = SCREEN_SIZE[1] - PADDLE_HEIGHT - 10
-
-# Color constants
-BLACK = (0,0,0)
-WHITE = (255,255,255)
-BLUE  = (0,0,255)
-PINK = (255,105,180)
-BRICK_COLOR = (200,200,0)
-
-# State constants
-STATE_BALL_IN_PADDLE = 0
-STATE_PLAYING = 1
-STATE_WON = 2
-STATE_GAME_OVER = 3
+import utils
+from constants import *
 
 
 class Breakout(object):
@@ -55,6 +34,7 @@ class Breakout(object):
 
         self.init_game()
 
+
         
     def init_game(self):
         self.lives = 3
@@ -63,7 +43,7 @@ class Breakout(object):
         self.boosts_remaining = 3
         self.boost_time = 0
         self.speed_multiplyer = 1.0
-        self.state = STATE_BALL_IN_PADDLE
+        self.game_state = STATE_BALL_IN_PADDLE
 
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
@@ -87,7 +67,7 @@ class Breakout(object):
         for brick in self.bricks:
             pygame.draw.rect(self.screen, BRICK_COLOR, brick)
         
-    def check_input(self, input):
+    def take_input(self, input):
         boost = 5 if self.boost_time > 0 else 0
 
         if 'L' in input:
@@ -104,16 +84,16 @@ class Breakout(object):
             self.boosts_remaining -= 1
             self.boost_time += 25
 
-        if 'sp' in input and self.state == STATE_BALL_IN_PADDLE:
+        if 'sp' in input and self.game_state == STATE_BALL_IN_PADDLE:
             self.ball_vel = [5,5]
             self.speed_multiplyer = 1.0
-            self.state = STATE_PLAYING
-        elif 'ret' in input and (self.state == STATE_GAME_OVER or self.state == STATE_WON):
+            self.game_state = STATE_PLAYING
+        elif 'ret' in input and (self.game_state == STATE_GAME_OVER or self.game_state == STATE_WON):
             self.init_game()
 
     def move_ball(self):
         self.ball.x += self.ball_vel[0] * self.speed_multiplyer
-        self.ball.y  += self.ball_vel[1] * self.speed_multiplyer
+        self.ball.y -= self.ball_vel[1] * self.speed_multiplyer    # pygame treats "up" as decreasing y axis
 
         if self.ball.left <= 0:
             self.ball.left = 0
@@ -140,7 +120,7 @@ class Breakout(object):
                 break
 
         if len(self.bricks) == 0:
-            self.state = STATE_WON
+            self.game_state = STATE_WON
             
         if self.ball.colliderect(self.paddle):
             distance_from_center = float(self.ball.centerx - self.paddle.centerx)
@@ -150,9 +130,10 @@ class Breakout(object):
         elif self.ball.top > self.paddle.top:
             self.lives -= 1
             if self.lives > 0:
-                self.state = STATE_BALL_IN_PADDLE
+                self.game_state = STATE_BALL_IN_PADDLE
             else:
-                self.state = STATE_GAME_OVER
+                self.game_state = STATE_GAME_OVER
+
 
     def show_stats(self):
         if self.font:
@@ -168,6 +149,34 @@ class Breakout(object):
             self.screen.blit(font_surface, (x,y))
         
 
+    def get_state(self):
+        # TODO - WORK ON STATE VECTOR
+        state = {
+            'game_state': self.game_state
+            }
+        return state
+
+    def discretizeLocation(self, x, y):
+        """ 
+        converts continuous coordinates in R^2 to discrete location measurement 
+
+        does so by converting game board to grid of 20x20 pixel squares, then
+          gives the index of the square that (x, y) is in
+        """
+        entries_in_row = SCREEN_SIZE[0] / 20
+        x_grid = x / 10
+        y_grid = y / 10
+        return x_grid + y_grid * (SCREEN_SIZE[0] / 20)
+
+    
+    # TODO - put many of these in utils file
+
+    def discretizeAngle(self, vec):
+        """ 
+        buckets the continuous angle of a vector into one of 16 discrete angle categories
+        """
+        return int(utils.angle(vec) / 10)
+
     @abc.abstractmethod
     def run(self):
         return
@@ -178,7 +187,7 @@ class HumanControlledBreakout(Breakout):
     def __init__(self):
         super(HumanControlledBreakout, self).__init__()
 
-    def _get_input(self):
+    def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
         input = []
         input += ['L'] if keys[pygame.K_LEFT] else []
@@ -198,19 +207,19 @@ class HumanControlledBreakout(Breakout):
 
             self.clock.tick(50)
             self.screen.fill(BLACK)
-            self.check_input(self._get_input())
+            self.take_input(self._get_input_from_keyboard())
 
-            if self.state == STATE_PLAYING:
+            if self.game_state == STATE_PLAYING:
                 self.move_ball()
                 self.handle_collisions()
-            elif self.state == STATE_BALL_IN_PADDLE:
+            elif self.game_state == STATE_BALL_IN_PADDLE:
                 self.ball.left = self.paddle.left + self.paddle.width / 2
                 self.ball.top  = self.paddle.top - self.ball.height
                 self.show_message("PRESS SPACE TO LAUNCH THE BALL")
                 self.show_message("PRESS B TO BOOST", 0, 30)
-            elif self.state == STATE_GAME_OVER:
+            elif self.game_state == STATE_GAME_OVER:
                 self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            elif self.state == STATE_WON:
+            elif self.game_state == STATE_WON:
                 self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
                 
             self.draw_bricks()
@@ -246,81 +255,37 @@ class BotControlledBreakout(Breakout):
                 self.clock.tick(50)
                 self.screen.fill(BLACK)
 
-                self._discretizeLocation(self.paddle.x, self.paddle.y)
+            # agent observes state, makes move
+            self.agent.observeState(self.get_state())
+            self.take_input(self.agent.takeAction())
 
 
-#  TODO - THINK MORE ABOUT THIS...DISCRETIZE SPEED?
-#            state_vector = {
-#                "paddle_pos": self._discretizeLocation(self.paddle.x, self.paddle.y),
-#                "ball_pos": self._discretizeLocation(self.ball.x, self.ball.y)
-#                "ball_angle": self._discretizeAngle(self.ball_vel)
-#                "boosts_remaining": self.boosts_left
-#                }
-
-            if self.state == STATE_PLAYING:
+            if self.game_state == STATE_PLAYING:
                 self.move_ball()
                 self.handle_collisions()
-            elif self.state == STATE_BALL_IN_PADDLE:
+            elif self.game_state == STATE_BALL_IN_PADDLE:
                 self.ball.left = self.paddle.left + self.paddle.width / 2
                 self.ball.top  = self.paddle.top - self.ball.height
                 self.show_message("PRESS SPACE TO LAUNCH THE BALL")
                 self.show_message("PRESS B TO BOOST", 0, 30)
-            elif self.state == STATE_GAME_OVER:
-                self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            elif self.state == STATE_WON:
-                self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
+
+
 
             self.boost_time = max(self.boost_time - 1, 0)
                 
             if self.display:
                 self.draw_bricks()
-
                 # Draw paddle
                 if self.boost_time > 0:
                     pygame.draw.rect(self.screen, PINK, self.paddle)                
                 else:
                     pygame.draw.rect(self.screen, BLUE, self.paddle)
-
                 # Draw ball
                 pygame.draw.circle(self.screen, WHITE, (self.ball.left + BALL_RADIUS, self.ball.top + BALL_RADIUS), BALL_RADIUS)
-
                 self.show_stats()
-
                 pygame.display.flip()
     
 
-    def _discretizeLocation(self, x, y):
-        """ 
-        converts continuous coordinates in R^2 to discrete location measurement 
-
-        does so by converting game board to grid of 20x20 pixel squares, then
-          gives the index of the square that (x, y) is in
-        """
-        entries_in_row = SCREEN_SIZE[0] / 20
-        x_grid = x / 10
-        y_grid = y / 10
-        return x_grid + y_grid * (SCREEN_SIZE[0] / 20)
-
-    
-    # TODO - put many of these in utils file
-    def dotProduct(self, a, b):
-        return sum(x * y for (x, y) in zip(a, b))
-
-    def _magnitude(self, a):
-        """ magnitude of vector """
-        return math.sqrt(self.dotProduct(a, a))
-
-
-    def _angle_between(self, a, b):
-        """ angle between two vectors"""
-
-        return math.degrees(math.acos(self.dotProduct(a, b) / (self._magnitude(a) * self._magnitude(b))))
-
-    def _discretizeAngle(self, vec):
-        """ 
-        buckets the continuous angle of a vector into one of 16 discrete angle categories
-        """
-        return int(self._angle_between([1,0], vec) / 16)
 
 
 
