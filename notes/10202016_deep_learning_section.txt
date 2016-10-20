@@ -1,0 +1,29 @@
+
+
+q learning as gradient descent
+
+feature vector for breakout?
+	x paddle
+	y paddle
+	x distance between paddle and ball
+	x velocidty of ball
+	...
+	1 if action is "move right"
+	...
+
+handcrafting features is hard ===> deep learning, learn features automatically
+     also relies on domain knowledge (not generally applicable)
+
+generalizable features == deep learning
+
+feed network state, have predict q values for each possible action
+     take softmax over q's, use it as action that has highest
+    
+for STATE, use state over a series of frames (e.g. 4)!!
+    but state is highly correlated, so randomly sample states from the game
+    called "EXPERIENCE REPLAY"
+    epsilon-greedy approach: explore states
+
+
+t-sne on hidden layer (hidden representation) to see what it's learning
+       
