@@ -9,13 +9,15 @@ from constants import *
 
 
 class Agent(object):
-
+    """ 
+    abstract base class for game-playing agents
+    """
     def __init__(self):
         return
 
 
     @abc.abstractmethod
-    def observeState(self, state):
+    def processState(self, state):
         """ observe state and possibly learn something """
         return
 
@@ -31,10 +33,13 @@ class Baseline(object):
         self.press_space = False
         return
 
-    def observeState(self, state):
+    def processState(self, state):
         if state['game_state'] == STATE_BALL_IN_PADDLE:
-            press_space = True
-
+            self.press_space = True
 
     def takeAction(self):
-        return ['sp'] if self.press_space else []
+        if self.press_space:
+            self.press_space = False
+            return ['sp']
+        else:
+            return []

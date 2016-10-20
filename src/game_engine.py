@@ -6,7 +6,9 @@ TODO
    - give each input its own constant
    - finish implementing baseline
    - make ball reset velocity vector when it gets set back in paddle
-
+   - track previous state, action, rewards for Q-learning, model-free learning, etc
+   - print out game stats after game over
+   - driver method for batch games/aggregate statistics
 """
 import sys
 import pygame
@@ -17,10 +19,17 @@ from constants import *
 
 
 class Breakout(object):
+    """
+    Abstract base class for breakout
 
-    def __init__(self):
+    Implements basically all of the game logic. The only thing that remains
+       for subclasses to flesh out is the run() method
+    """
+    def __init__(self, verbose, display):
+        self.verbose = verbose
+        self.display = display
+
         pygame.init()
-        
 
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         pygame.display.set_caption("Breakout!!")
@@ -34,9 +43,9 @@ class Breakout(object):
 
         self.init_game()
 
-
         
     def init_game(self):
+        """ set game params """
         self.lives = 3
         self.score = 0
         self.num_hits = 0
@@ -44,16 +53,14 @@ class Breakout(object):
         self.boost_time = 0
         self.speed_multiplyer = 1.0
         self.game_state = STATE_BALL_IN_PADDLE
-
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
-
         self.ball_vel = [5, 5]
-
         self.create_bricks()
         
 
     def create_bricks(self):
+        """ creates smashable targets """
         y_ofs = 35
         self.bricks = []
         for i in range(7):
@@ -68,6 +75,7 @@ class Breakout(object):
             pygame.draw.rect(self.screen, BRICK_COLOR, brick)
         
     def take_input(self, input):
+        """ takes a vector of game inputs and applies them to game objects """
         boost = 5 if self.boost_time > 0 else 0
 
         if 'L' in input:
@@ -92,6 +100,7 @@ class Breakout(object):
             self.init_game()
 
     def move_ball(self):
+        """ applies ball velocity vector to ball """
         self.ball.x += self.ball_vel[0] * self.speed_multiplyer
         self.ball.y -= self.ball_vel[1] * self.speed_multiplyer    # pygame treats "up" as decreasing y axis
 
@@ -109,7 +118,9 @@ class Breakout(object):
             self.ball.top = MAX_BALL_Y
             self.ball_vel[1] = -self.ball_vel[1]
 
+
     def handle_collisions(self):
+        """ logic for collision between ball and game object """
         for brick in self.bricks:
             if self.ball.colliderect(brick):
                 self.score += 3
@@ -131,6 +142,8 @@ class Breakout(object):
             self.lives -= 1
             if self.lives > 0:
                 self.game_state = STATE_BALL_IN_PADDLE
+                self.ball.left = self.paddle.left + self.paddle.width / 2
+                self.ball.top  = self.paddle.top - self.ball.height
             else:
                 self.game_state = STATE_GAME_OVER
 
@@ -150,6 +163,7 @@ class Breakout(object):
         
 
     def get_state(self):
+        """ contstructs and returns a vector representation of current game state """
         # TODO - WORK ON STATE VECTOR
         state = {
             'game_state': self.game_state
@@ -183,9 +197,11 @@ class Breakout(object):
 
 
 class HumanControlledBreakout(Breakout):
-    """ TODO - move input recognizing logic, and run here """
-    def __init__(self):
-        super(HumanControlledBreakout, self).__init__()
+    """
+    Breakout subclass which takes inputs from the keyboard during run()
+    """
+    def __init__(self, verbose, display):
+        super(HumanControlledBreakout, self).__init__(verbose, display)
 
     def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
@@ -207,7 +223,6 @@ class HumanControlledBreakout(Breakout):
 
             self.clock.tick(50)
             self.screen.fill(BLACK)
-            self.take_input(self._get_input_from_keyboard())
 
             if self.game_state == STATE_PLAYING:
                 self.move_ball()
@@ -237,13 +252,22 @@ class HumanControlledBreakout(Breakout):
 
             pygame.display.flip()
 
+            self.take_input(self._get_input_from_keyboard())
+
 
 class BotControlledBreakout(Breakout):
+    """ 
+    Breakout subclass for agent-controlled games.
+    
+    Whereas HumanControlledBreakout disregaurds game state, BotControlledBreakout gives a vector representation of
+       each state (and possibly other stuff) to a game-playing agent, and recieves input (actions) from this agent
+    """
+
     """ TODO - create state vectors, don't have run draw stuff, give state vectors to learning agent (in another file""" 
-    def __init__(self, agent, display):
+    def __init__(self, agent, verbose, display):
+        super(BotControlledBreakout, self).__init__(verbose, display)
         self.agent = agent
-        self.display = display
-        super(BotControlledBreakout, self).__init__()
+
 
     def run(self):
         while 1:            
@@ -255,21 +279,16 @@ class BotControlledBreakout(Breakout):
                 self.clock.tick(50)
                 self.screen.fill(BLACK)
 
-            # agent observes state, makes move
-            self.agent.observeState(self.get_state())
-            self.take_input(self.agent.takeAction())
-
-
             if self.game_state == STATE_PLAYING:
                 self.move_ball()
                 self.handle_collisions()
             elif self.game_state == STATE_BALL_IN_PADDLE:
-                self.ball.left = self.paddle.left + self.paddle.width / 2
-                self.ball.top  = self.paddle.top - self.ball.height
                 self.show_message("PRESS SPACE TO LAUNCH THE BALL")
                 self.show_message("PRESS B TO BOOST", 0, 30)
-
-
+            elif self.game_state == STATE_GAME_OVER:
+                self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
+            elif self.game_state == STATE_WON:
+                self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
 
             self.boost_time = max(self.boost_time - 1, 0)
                 
@@ -286,10 +305,14 @@ class BotControlledBreakout(Breakout):
                 pygame.display.flip()
     
 
+            # agent observes state, makes move
+            self.agent.processState(self.get_state())
+            self.take_input(self.agent.takeAction())
+
 
 
 
 
 if __name__ == "__main__":
-#    HumanControlledBreakout().run()
-    BotControlledBreakout(None, True).run()
+    HumanControlledBreakout().run()
+#    BotControlledBreakout(None, True).run()
