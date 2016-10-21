@@ -9,6 +9,7 @@ TODO
    - let user quit from keyboard
    - better oracle/baseline?
    - make bricks flush against walls
+   - refactor run() method....move shared bits to Breakout in a clean way (how to do with display option?)
 """
 import sys
 import pygame
