@@ -16,6 +16,8 @@ def main(args, parser):
         game = breakout.HumanControlledBreakout(args.v, args.d)
     elif args.p == "baseline":
         game = breakout.BotControlledBreakout(agents.Baseline(), args.v, args.d)
+    elif args.p == "oracle":
+        game = breakout.OracleControlledBreakout(args.v, args.d)
     game.run()
 
 if __name__ == "__main__":

@@ -18,7 +18,6 @@ def angle(vec):
     a = angleBetween([0, 1], vec)
     return 360 - a if vec[0] < 0 else a
 
-
 def angleBetween(a, b):
     """angle between two vectors"""
     a = normalize(a)

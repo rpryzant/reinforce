@@ -40,6 +40,6 @@ class Baseline(object):
     def takeAction(self):
         if self.press_space:
             self.press_space = False
-            return ['sp']
+            return [INPUT_SPACE]
         else:
             return []
