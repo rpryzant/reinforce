@@ -2,7 +2,8 @@
 
 ### project description
 * algo: Q Learning with function approximation? policy gradients?
-
+* off policy learning from multiple exploratory policies (one per thread)
+* off policy learning on previous/stale policies? (bootstrap on policy)
 
 ## Questions for percy
 * we should be doing model free learning, right?
