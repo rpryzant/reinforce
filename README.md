@@ -10,6 +10,11 @@
 * state vector should include notion of actions!!!
 * radial basis, course coding for function approximators?
 * do TD, find best lambda value?
+* use experience replay - store experience (state, value) pairs
+  * **LECTURE 6 1:18!!** 
+  * experience replay is good because it decorrelates trajectories
+  * use old params for target calculation for more stable update
+    * experiment with smooth interpolation between old, fresh weights? (papers swap weights every once in a while)
 
 
 ## Questions for percy
