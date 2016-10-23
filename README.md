@@ -8,6 +8,7 @@
 * different kinds of function approximators? (neural net, logistic regression, etc)
   * td(0), td(lambda), backward view td, mc
 * state vector should include notion of actions!!!
+* radial basis, course coding for function approximators?
 
 
 ## Questions for percy
