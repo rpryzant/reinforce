@@ -16,6 +16,8 @@
   * use old params for target calculation for more stable update
     * experiment with smooth interpolation between old, fresh weights? (papers swap weights every once in a while)
 * if we have a small feature space, use linear least squares prediction to get to weights in one sep
+* least squares policy iteration
+
 
 
 ## Questions for percy
