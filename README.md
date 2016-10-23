@@ -2,7 +2,10 @@
 
 ### project description
 * algo: Q Learning with function approximation? policy gradients?
-
+* off policy learning from multiple exploratory policies (one per thread)
+* off policy learning on previous/stale policies? (bootstrap on policy)
+* use q learning for off policy learning: next action is chosen using behavior policy, also consider altertative successor action drawn from foreign policy. Bootstrap on this alternative successor action. Target policy should be **greedy** w.r.t Q, behavior policy should be **epsilon-greedy** with respect to Q
+* different kinds of function approximators? (neural net, logistic regression, etc)
 
 ## Questions for percy
 * we should be doing model free learning, right?
