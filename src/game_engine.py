@@ -10,6 +10,10 @@ TODO
    - better oracle/baseline?
    - make bricks flush against walls
    - refactor run() method....move shared bits to Breakout in a clean way (how to do with display option?)
+
+   - BASELINE MOVE RANDOMLY, DUMB HEURISTISCS
+
+
 """
 import sys
 import pygame
@@ -62,11 +66,11 @@ class Breakout(object):
 
     def create_bricks(self):
         """ creates smashable targets """
-        y_ofs = 35
+        y_ofs = 60
         self.bricks = []
-        for i in range(7):
-            x_ofs = 35
-            for j in range(8):
+        for i in range(6):
+            x_ofs = 10
+            for j in range(9):
                 self.bricks.append(pygame.Rect(x_ofs,y_ofs,BRICK_WIDTH,BRICK_HEIGHT))
                 x_ofs += BRICK_WIDTH + 10
             y_ofs += BRICK_HEIGHT + 5
@@ -131,7 +135,7 @@ class Breakout(object):
                 self.num_hits += 1
                 self.ball_vel[1] = -self.ball_vel[1]
                 self.bricks.remove(brick)
-                self.speed_multiplyer = min(self.speed_multiplyer + 0.1, 2.5)
+                self.speed_multiplyer = min(self.speed_multiplyer + 0.1, 2.0)
                 break
 
         if len(self.bricks) == 0:
@@ -150,6 +154,50 @@ class Breakout(object):
                 self.ball.top  = self.paddle.top - self.ball.height
             else:
                 self.game_state = STATE_GAME_OVER
+
+
+    def execute_turn(self):
+        """ 
+        logic for a single game turn:
+           -move ball
+           -display messages (if appropriate)
+           -draw game on screen
+           -update boost time
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit
+
+        if self.display:
+            self.clock.tick(50)
+            self.screen.fill(BLACK)
+
+        if self.game_state == STATE_PLAYING:
+            self.move_ball()
+            self.handle_collisions()
+        elif self.game_state == STATE_BALL_IN_PADDLE:
+            self.ball.left = self.paddle.left + self.paddle.width / 2
+            self.ball.top  = self.paddle.top - self.ball.height
+            self.show_message("PRESS SPACE TO LAUNCH THE BALL")
+            self.show_message("PRESS B TO BOOST", 0, 30)
+        elif self.game_state == STATE_GAME_OVER:
+            self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
+        elif self.game_state == STATE_WON:
+            self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
+
+        self.boost_time = max(self.boost_time - 1, 0)
+        
+        if self.display:
+            self.draw_bricks()
+            # Draw paddle
+            if self.boost_time > 0:
+                pygame.draw.rect(self.screen, PINK, self.paddle)                
+            else:
+                pygame.draw.rect(self.screen, BLUE, self.paddle)
+            # Draw ball
+            pygame.draw.circle(self.screen, WHITE, (self.ball.left + BALL_RADIUS, self.ball.top + BALL_RADIUS), BALL_RADIUS)
+            self.show_stats()
+            pygame.display.flip()
 
 
     def show_stats(self):
@@ -188,7 +236,6 @@ class Breakout(object):
 
     
     # TODO - put many of these in utils file
-
     def discretizeAngle(self, vec):
         """ 
         buckets the continuous angle of a vector into one of 16 discrete angle categories
@@ -215,47 +262,11 @@ class HumanControlledBreakout(Breakout):
         input += [INPUT_B] if keys[pygame.K_b] else []
         input += [INPUT_SPACE] if keys[pygame.K_SPACE] else []
         input += [INPUT_ENTER] if keys[pygame.K_RETURN] else []
-
         return input
         
-
     def run(self):
         while 1:            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit
-
-            self.clock.tick(50)
-            self.screen.fill(BLACK)
-
-            if self.game_state == STATE_PLAYING:
-                self.move_ball()
-                self.handle_collisions()
-            elif self.game_state == STATE_BALL_IN_PADDLE:
-                self.ball.left = self.paddle.left + self.paddle.width / 2
-                self.ball.top  = self.paddle.top - self.ball.height
-                self.show_message("PRESS SPACE TO LAUNCH THE BALL")
-                self.show_message("PRESS B TO BOOST", 0, 30)
-            elif self.game_state == STATE_GAME_OVER:
-                self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            elif self.game_state == STATE_WON:
-                self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
-                
-            self.draw_bricks()
-            self.boost_time = max(self.boost_time - 1, 0)
-            # Draw paddle
-            if self.boost_time > 0:
-                pygame.draw.rect(self.screen, PINK, self.paddle)                
-            else:
-                pygame.draw.rect(self.screen, BLUE, self.paddle)
-
-            # Draw ball
-            pygame.draw.circle(self.screen, WHITE, (self.ball.left + BALL_RADIUS, self.ball.top + BALL_RADIUS), BALL_RADIUS)
-
-            self.show_stats()
-
-            pygame.display.flip()
-
+            self.execute_turn()
             self.take_input(self._get_input_from_keyboard())
 
 
@@ -272,47 +283,11 @@ class BotControlledBreakout(Breakout):
         super(BotControlledBreakout, self).__init__(verbose, display)
         self.agent = agent
 
-
     def run(self):
         while 1:            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit
-
-            if self.display:
-                self.clock.tick(50)
-                self.screen.fill(BLACK)
-
-            if self.game_state == STATE_PLAYING:
-                self.move_ball()
-                self.handle_collisions()
-            elif self.game_state == STATE_BALL_IN_PADDLE:
-                self.show_message("PRESS SPACE TO LAUNCH THE BALL")
-                self.show_message("PRESS B TO BOOST", 0, 30)
-            elif self.game_state == STATE_GAME_OVER:
-                self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            elif self.game_state == STATE_WON:
-                self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
-
-            self.boost_time = max(self.boost_time - 1, 0)
-                
-            if self.display:
-                self.draw_bricks()
-                # Draw paddle
-                if self.boost_time > 0:
-                    pygame.draw.rect(self.screen, PINK, self.paddle)                
-                else:
-                    pygame.draw.rect(self.screen, BLUE, self.paddle)
-                # Draw ball
-                pygame.draw.circle(self.screen, WHITE, (self.ball.left + BALL_RADIUS, self.ball.top + BALL_RADIUS), BALL_RADIUS)
-                self.show_stats()
-                pygame.display.flip()
-    
-
-            # agent observes state, makes move
+            self.execute_turn()
             self.agent.processState(self.get_state())
             self.take_input(self.agent.takeAction())
-
 
 
 class OracleControlledBreakout(Breakout):
@@ -326,42 +301,12 @@ class OracleControlledBreakout(Breakout):
         super(OracleControlledBreakout, self).__init__(verbose, display)
 
     def run(self):
-        while 1:            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit
-
-            if self.display:
-                self.clock.tick(50)
-                self.screen.fill(BLACK)
-
-            if self.game_state == STATE_PLAYING:
-                self.move_ball()
-                self.handle_collisions()
-            elif self.game_state == STATE_BALL_IN_PADDLE:
-                self.show_message("PRESS SPACE TO LAUNCH THE BALL")
-                self.show_message("PRESS B TO BOOST", 0, 30)
+        while 1:
+            self.set_paddle_pos(self.ball.left - 35)
+            self.execute_turn()
+            if self.game_state == STATE_BALL_IN_PADDLE:
                 self.take_input([INPUT_SPACE])
-            elif self.game_state == STATE_GAME_OVER:
-                self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            elif self.game_state == STATE_WON:
-                self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
 
-            self.boost_time = max(self.boost_time - 1, 0)
-                
-            if self.display:
-                self.draw_bricks()
-                # Draw paddle
-                if self.boost_time > 0:
-                    pygame.draw.rect(self.screen, PINK, self.paddle)                
-                else:
-                    pygame.draw.rect(self.screen, BLUE, self.paddle)
-                # Draw ball
-                pygame.draw.circle(self.screen, WHITE, (self.ball.left + BALL_RADIUS, self.ball.top + BALL_RADIUS), BALL_RADIUS)
-                self.show_stats()
-                pygame.display.flip()
-
-            self.set_paddle_pos(self.ball.left - 4)
 
 
 if __name__ == "__main__":
