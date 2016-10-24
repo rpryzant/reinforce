@@ -218,7 +218,14 @@ class Breakout(object):
         """ contstructs and returns a vector representation of current game state """
         # TODO - WORK ON STATE VECTOR
         state = {
-            'game_state': self.game_state
+            'game_state': self.game_state,
+            'ball_x':self.ball.x,
+            'ball_y':self.ball.y,
+            'ball_vel_x':self.ball_vel[0],
+            'ball_vel_y':self.ball_vel[1],
+            'paddle_x':self.paddle.left
+
+
             }
         return state
 
