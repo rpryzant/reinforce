@@ -51,12 +51,14 @@ class Breakout(object):
         
     def init_game(self):
         """ set game params """
-        self.lives = 3
+        self.lives = 1
         self.score = 0
         self.num_hits = 0
         self.boosts_remaining = 3
         self.boost_time = 0
         self.speed_multiplyer = 1.0
+        self.time = 0
+        self.data_collected = False
         self.game_state = STATE_BALL_IN_PADDLE
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
@@ -178,6 +180,7 @@ class Breakout(object):
             self.screen.fill(BLACK)
 
         if self.game_state == STATE_PLAYING:
+            self.time += 1
             self.move_ball()
             self.handle_collisions()
         elif self.game_state == STATE_BALL_IN_PADDLE:
@@ -187,8 +190,10 @@ class Breakout(object):
             self.show_message("PRESS B TO BOOST", 0, 30)
         elif self.game_state == STATE_GAME_OVER:
             self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
+            self.end_game()
         elif self.game_state == STATE_WON:
             self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
+            self.end_game()
 
         self.boost_time = max(self.boost_time - 1, 0)
         
@@ -233,6 +238,16 @@ class Breakout(object):
 
             }
         return state
+
+    def end_game(self):
+        """ Gets called when the game ends
+            -Used for data collection
+            """
+        if not self.data_collected:
+            self.data_collected = True
+            print 'Score : ',self.score
+            print 'Number of frames elapsed : ',self.time
+            print 'Number of bricks left : ', len(self.bricks)
 
     def discretizeLocation(self, x, y):
         """ 
