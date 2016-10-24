@@ -133,9 +133,14 @@ class Breakout(object):
             if self.ball.colliderect(brick):
                 self.score += 3
                 self.num_hits += 1
-                self.ball_vel[1] = -self.ball_vel[1]
+                if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\
+                     or (brick.x +BRICK_WIDTH < self.ball.x - self.ball_vel[0] * self.speed_multiplyer):
+                    self.ball_vel[0] = -self.ball_vel[0]
+                else:
+                    self.ball_vel[1] = -self.ball_vel[1]
+                #self.ball_vel[0] = -self.ball_vel[0]
                 self.bricks.remove(brick)
-                self.speed_multiplyer = min(self.speed_multiplyer + 0.1, 2.0)
+                self.speed_multiplyer = min(self.speed_multiplyer + 0.05, 1.8)
                 break
 
         if len(self.bricks) == 0:
