@@ -327,6 +327,46 @@ class OracleControlledBreakout(Breakout):
     def __init__(self, verbose, display):
         super(OracleControlledBreakout, self).__init__(verbose, display)
 
+    def handle_collisions(self):
+        """ 
+        overide super.handle_collisions to give oracle more lenient ball-paddle collision conditions
+
+        accounts for the case where ball velocity is so fast it jumps past the paddle in one game turn
+        """
+        for brick in self.bricks:
+            if self.ball.colliderect(brick):
+                self.score += 3
+                self.num_hits += 1
+                if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\
+                     or (brick.x +BRICK_WIDTH < self.ball.x - self.ball_vel[0] * self.speed_multiplyer):
+                    self.ball_vel[0] = -self.ball_vel[0]
+                else:
+                    self.ball_vel[1] = -self.ball_vel[1]
+                self.bricks.remove(brick)
+                self.speed_multiplyer = min(self.speed_multiplyer + 0.05, 1.8)
+                break
+
+        if len(self.bricks) == 0:
+            self.game_state = STATE_WON
+            
+        if self.ball.colliderect(self.paddle) or \
+                (abs(self.paddle.centerx - self.ball.centerx) < PADDLE_WIDTH * 2 and abs(self.paddle.centery - self.ball.centery) < BALL_DIAMETER):
+            distance_from_center = float(self.ball.centerx - self.paddle.centerx)
+            self.ball.top = PADDLE_Y - BALL_DIAMETER
+            self.ball_vel[0] += distance_from_center / 7
+            self.ball_vel[1] = -self.ball_vel[1]
+        elif self.ball.top > self.paddle.top:
+            print self.paddle.centerx, self.paddle.centery
+            print self.ball.centerx, self.ball.centery
+            self.lives -= 1
+            if self.lives > 0:
+                self.game_state = STATE_BALL_IN_PADDLE
+                self.ball.left = self.paddle.left + self.paddle.width / 2
+                self.ball.top  = self.paddle.top - self.ball.height
+            else:
+                self.game_state = STATE_GAME_OVER
+
+
     def run(self):
         while 1:
             self.set_paddle_pos(self.ball.left - 35)
