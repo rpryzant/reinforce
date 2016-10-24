@@ -32,6 +32,8 @@ class Baseline(object):
     def __init__(self):
         self.press_space = False
         self.go_right = False
+        self.game_over = False
+        self.press_enter = False
         return
 
     def processState(self, state):
@@ -41,17 +43,26 @@ class Baseline(object):
             self.go_right = True
         else:
             self.go_right = False
+        if state['game_state'] == STATE_GAME_OVER or state['game_state'] == STATE_WON:
+            self.game_over = True
+            
 
 
     def takeAction(self):
         if self.press_space:
             self.press_space = False
             return [INPUT_SPACE]
+
+        if self.press_enter:
+            self.press_enter = False
+            return [INPUT_ENTER]
+        if self.game_over:
+            self.game_over = False
+            self.press_enter = True
+            return []
         else:
             if self.go_right :
                 return [INPUT_R]
             if not self.go_right :
                 return [INPUT_L]
-
-
             return []
