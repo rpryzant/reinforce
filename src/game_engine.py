@@ -4,16 +4,7 @@ Breakout
 
 TODO
    - track previous state, action, rewards for Q-learning, model-free learning, etc
-   - print out game stats after game over
-   - driver method for batch games/aggregate statistics
    - let user quit from keyboard
-   - better oracle/baseline?
-   - make bricks flush against walls
-   - refactor run() method....move shared bits to Breakout in a clean way (how to do with display option?)
-
-   - BASELINE MOVE RANDOMLY, DUMB HEURISTISCS
-
-
 """
 import sys
 import pygame
@@ -30,9 +21,12 @@ class Breakout(object):
     Implements basically all of the game logic. The only thing that remains
        for subclasses to flesh out is the run() method
     """
-    def __init__(self, verbose, display):
+    def __init__(self, verbose, display, batches):
+        self.batches = batches
         self.verbose = verbose
         self.display = display
+
+        self.experience = []
 
         pygame.init()
 
@@ -48,6 +42,11 @@ class Breakout(object):
 
         self.init_game()
 
+        # play music!!!!1 except pygame doesn't like mp3's?? TODO fix (low priority)
+        #pygame.mixer.music.load('static/audio/FUTUREWORLD.mp3')
+        #pygame.mixer.music.play(-1)
+
+
         
     def init_game(self):
         """ set game params """
@@ -58,11 +57,13 @@ class Breakout(object):
         self.boost_time = 0
         self.speed_multiplyer = 1.0
         self.time = 0
-        self.data_collected = False
         self.game_state = STATE_BALL_IN_PADDLE
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
         self.ball_vel = [5, 5]
+        self.game_over = False
+
+
         self.create_bricks()
         
 
@@ -140,7 +141,6 @@ class Breakout(object):
                     self.ball_vel[0] = -self.ball_vel[0]
                 else:
                     self.ball_vel[1] = -self.ball_vel[1]
-                #self.ball_vel[0] = -self.ball_vel[0]
                 self.bricks.remove(brick)
                 self.speed_multiplyer = min(self.speed_multiplyer + 0.05, 1.8)
                 break
@@ -190,10 +190,12 @@ class Breakout(object):
             self.show_message("PRESS B TO BOOST", 0, 30)
         elif self.game_state == STATE_GAME_OVER:
             self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            self.end_game()
+            if not self.game_over:
+                self.end_game()
         elif self.game_state == STATE_WON:
             self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
-            self.end_game()
+            if not self.game_over:
+                self.end_game()
 
         self.boost_time = max(self.boost_time - 1, 0)
         
@@ -208,7 +210,6 @@ class Breakout(object):
             pygame.draw.circle(self.screen, WHITE, (self.ball.left + BALL_RADIUS, self.ball.top + BALL_RADIUS), BALL_RADIUS)
             self.show_stats()
             pygame.display.flip()
-
 
     def show_stats(self):
         if self.font:
@@ -234,20 +235,38 @@ class Breakout(object):
             'ball_vel_x':self.ball_vel[0],
             'ball_vel_y':self.ball_vel[1],
             'paddle_x':self.paddle.left
-
-
             }
         return state
 
     def end_game(self):
         """ Gets called when the game ends
-            -Used for data collection
+            -Used for data collection and batch runs
             """
-        if not self.data_collected:
-            self.data_collected = True
+        self.game_over = True
+
+        if self.verbose:
             print 'Score : ',self.score
             print 'Number of frames elapsed : ',self.time
             print 'Number of bricks left : ', len(self.bricks)
+
+        # todo save more stuff for aggregate stats?
+        self.experience += [{
+                'score': self.score,
+                'frames': self.time,
+                'bricks_remaining': len(self.bricks)
+                }]
+
+        if self.batches > 1:
+            self.batches -= 1
+            self.take_input([INPUT_ENTER])
+        else:
+            if self.verbose:
+                n = len(self.experience)
+                print 'Performance summary:'
+                print '\tGames: %d' % n
+                print '\tMean score: %d' % (sum(x['score'] for x in self.experience) * 1.0 / n)
+                print '\tMean time: %d' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
+                print '\tMean remaining bricks: %d' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
 
     def discretizeLocation(self, x, y):
         """ 
@@ -278,8 +297,8 @@ class HumanControlledBreakout(Breakout):
     """
     Breakout subclass which takes inputs from the keyboard during run()
     """
-    def __init__(self, verbose, display):
-        super(HumanControlledBreakout, self).__init__(verbose, display)
+    def __init__(self, verbose, display, batches):
+        super(HumanControlledBreakout, self).__init__(verbose, display, batches)
 
     def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
@@ -306,8 +325,8 @@ class BotControlledBreakout(Breakout):
     """
 
     """ TODO - create state vectors, don't have run draw stuff, give state vectors to learning agent (in another file""" 
-    def __init__(self, agent, verbose, display):
-        super(BotControlledBreakout, self).__init__(verbose, display)
+    def __init__(self, agent, verbose, display, batches):
+        super(BotControlledBreakout, self).__init__(verbose, display, batches)
         self.agent = agent
 
     def run(self):
@@ -324,8 +343,8 @@ class OracleControlledBreakout(Breakout):
     The oracle can return any ball - it translates the paddle to 
     match the exact position of the ball at all times
     """
-    def __init__(self, verbose, display):
-        super(OracleControlledBreakout, self).__init__(verbose, display)
+    def __init__(self, verbose, display, batches):
+        super(OracleControlledBreakout, self).__init__(verbose, display, batches)
 
     def handle_collisions(self):
         """ 
