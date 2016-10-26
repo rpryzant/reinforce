@@ -263,10 +263,10 @@ class Breakout(object):
             if self.verbose:
                 n = len(self.experience)
                 print 'Performance summary:'
-                print '\tGames: %d' % n
-                print '\tMean score: %d' % (sum(x['score'] for x in self.experience) * 1.0 / n)
-                print '\tMean time: %d' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
-                print '\tMean remaining bricks: %d' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
+                print '\tGames: %s' % n
+                print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
+                print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
+                print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
 
     def discretizeLocation(self, x, y):
         """ 
