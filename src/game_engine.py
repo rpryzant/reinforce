@@ -6,6 +6,7 @@ TODO
    - track previous state, action, rewards for Q-learning, model-free learning, etc
    - let user quit from keyboard
 """
+
 import sys
 import pygame
 import abc
