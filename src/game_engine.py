@@ -101,6 +101,10 @@ class Breakout(object):
             self.ball_vel = [5,5]
             self.speed_multiplyer = 1.0
             self.game_state = STATE_PLAYING
+
+        if INPUT_QUIT in input:
+            self.game_state = STATE_GAME_OVER
+            
         elif INPUT_ENTER in input and (self.game_state == STATE_GAME_OVER or self.game_state == STATE_WON):
             self.init_game()
 
@@ -309,6 +313,7 @@ class HumanControlledBreakout(Breakout):
         input += [INPUT_B] if keys[pygame.K_b] else []
         input += [INPUT_SPACE] if keys[pygame.K_SPACE] else []
         input += [INPUT_ENTER] if keys[pygame.K_RETURN] else []
+        input += [INPUT_QUIT] if keys[pygame.K_q] else []
         return input
         
     def run(self):

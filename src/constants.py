@@ -38,4 +38,5 @@ INPUT_R = 'R'
 INPUT_B = 'B'
 INPUT_SPACE = 'sp'
 INPUT_ENTER = 'ret'
+INPUT_QUIT = 'Q'
 
