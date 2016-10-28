@@ -239,7 +239,8 @@ class Breakout(object):
             'ball_y':self.ball.y,
             'ball_vel_x':self.ball_vel[0],
             'ball_vel_y':self.ball_vel[1],
-            'paddle_x':self.paddle.left
+            'paddle_x':self.paddle.left,
+            'time':self.time
             }
         return state
 
