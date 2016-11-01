@@ -342,8 +342,7 @@ class BotControlledBreakout(Breakout):
     def run(self):
         while 1:            
             self.execute_turn()
-            self.agent.processState(self.get_state())
-            self.take_input(self.agent.takeAction())
+            self.take_input(self.agent.processStateAndTakeAction(self.get_state()))
 
 
 class OracleControlledBreakout(Breakout):
