@@ -235,12 +235,15 @@ class Breakout(object):
         # TODO - WORK ON STATE VECTOR
         state = {
             'game_state': self.game_state,
-            'ball_x':self.ball.x,
-            'ball_y':self.ball.y,
-            'ball_vel_x':self.ball_vel[0],
-            'ball_vel_y':self.ball_vel[1],
-            'paddle_x':self.paddle.left,
-            'time':self.time
+            'ball': self.ball,
+            'ball_vel': self.ball_vel,
+            'boosts_left': self.boosts_remaining,
+            'boost_time': self.boost_time,
+            'paddle': self.paddle, 
+            'bricks': self.bricks,
+            'time': self.time,
+            'score': self.score, 
+            'lives': self.lives
             }
         return state
 

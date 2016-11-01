@@ -5,20 +5,45 @@ File for breakout-playing agents
 import abc
 from constants import *
 
-
-
-
 class Agent(object):
     """ 
     abstract base class for game-playing agents
     """
     def __init__(self):
+        self.experience = []
+        self.Q_values = {}
         return
 
+    @abc.abstractmethod
+    def processStateAction(self, raw_state):
+        """ observe state and possibly learn something """
+        def phi(self, raw_state):
+            #use experience 
+            # return state
+
+        def calc_reward(self, state):
+            # return reward
+
+        def get_opt_action(self, state):
+            # return list of operations (ie. action) ('left'/'right')
+
+        def update_Q(self, state, action):
+            # update Q values
+
+        def log_experience(self, reward, state, action):
+            # record reward, state, action in that order
+
+        def take_action(self, epsilon, opt_action):
+            # take epsilon greedy action
+
+        return
 
     @abc.abstractmethod
-    def processState(self, state):
-        """ observe state and possibly learn something """
+    def readModel(self, path):
+        return
+
+    @abc.abstractmethod
+    def writeModel(self, path):
         return
 
     @abc.abstractmethod
@@ -43,8 +68,7 @@ class Baseline(object):
             self.go_right = True
         else:
             self.go_right = False
-
-
+            
 
     def takeAction(self):
         if self.press_space:
