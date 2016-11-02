@@ -15,7 +15,9 @@ class Agent(object):
 
     def __init__(self):
         self.experience = []
-        self.numIters = 0                            # for controlling step size
+        self.numIters = 0  
+        self.Q_values = {}                          # for controlling step size
+        """ Q_values is a 2D dictionnary indexed first on the state, then on the action """
         return
 
     @abc.abstractmethod
@@ -39,7 +41,23 @@ class Agent(object):
                   state: dict
                      state dict that is amenable to learning (ie. state features)
             """
-            pass
+            grid_step = 10
+            angle_step = 8
+
+            state = {}
+            state['state'+str(raw_state['game_state'])] = 1
+            state['ball_x'+str(int(raw_state['ball'].x) / grid_step)] = 1
+            state['ball_y'+str(int(raw_state['ball'].y) / grid_step)] = 1
+            state['paddle_x'+str(int(raw_state['paddle'].x) / grid_step)] = 1
+            for brick in raw_state['bricks']:
+              state['brick('+str(brick.x)+','+str(brick.y)+')'] = 1
+            state['ball_vel_angle'+str( angle([raw_state['ball_vel'].x , raw_state['ball_vel'].y ]) )] = 1
+
+
+            state['score'] = raw_state['score']      # <-- do we want the score ? State will be too large
+            
+
+            return state
 
         def calc_reward(self, state):
             """Reward calculation function. Looks at current state (given)
@@ -59,7 +77,7 @@ class Agent(object):
             """
             pass
 
-v        def get_opt_action(self, state):
+        def get_opt_action(self, state):
             """Produce an action given a state
 
                Args:
@@ -69,7 +87,13 @@ v        def get_opt_action(self, state):
                   action: list
                       list of game operations, e.g. [INPUT_SPACE, INPUT_L, ..]
             """
-            pass
+            action = []
+            max_value = -float('infinity')
+            for operation in self.Q_values[state].keys():
+              if self.Q_values[state][operation] > max_value :
+                max_value = self.Q_values[state][operation]
+                action = [operation]
+            return action
 
         def update_Q(self, state, opt_action):
             """Incorporates feedback on state and action by updating 
