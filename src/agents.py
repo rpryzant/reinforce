@@ -6,6 +6,8 @@ import abc
 from constants import *
 from collections import defaultdict
 import re
+import math
+from utils import *
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -13,6 +15,7 @@ class Agent(object):
 
     def __init__(self):
         self.experience = []
+        self.numIters = 0                            # for controlling step size
         return
 
     @abc.abstractmethod
@@ -56,7 +59,7 @@ class Agent(object):
             """
             pass
 
-        def get_opt_action(self, state):
+v        def get_opt_action(self, state):
             """Produce an action given a state
 
                Args:
@@ -125,19 +128,33 @@ class Agent(object):
         """Writes model params to `path`"""
         return
 
+    def getStepSize(self):
+        return 1.0 / math.sqrt(self.numIters)
+
 
 
 class SimpleQLearningAgent(Agent):
     """Simple q learning agent (no function aproximation)
     """
-    def __init__(self):
+    def __init__(self, gamma=0.99, eta=0.5):
         super(SimpleQLearningAgent, self).__init__()
         self.Q_values = defaultdict(float)
+        self.gamma = gamma
+
         return
 
     def processStateAndTakeAction(self, state):
-        # TODO
-        return
+        self.numIters += 1
+
+        def update_Q(self, prev_state, prev_action, reward, state, opt_action):
+            eta = self.getStepSize()
+
+            prediction = self.Q_values[prev_state, prev_aciton]
+            target = reward + self.gamma * self.Q_values[state, opt_action]
+
+            self.Q_values[prev_state, prev_action] = (1 - eta) * prediction + eta * target
+
+
 
     def readModel(self, path):
         Q_string = open(path, 'r').read()
@@ -150,18 +167,38 @@ class SimpleQLearningAgent(Agent):
         file.write(str(self.Q_values))
         file.close()
 
+
+
+
+
+
+
+
 class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self):
+    def __init__(self, gamma=0.99):
         super(FuncApproxQLearningAgent, self).__init__()
         self.weights = defaultdict(float)
+        self.gamma = gamma
         return
 
     def processStateAndTakeAction(self, state):
-        # TODO
+        def update_Q(self, prev_state, prev_action, reward, newState, opt_action):
+            prediction = self.getQ(prev_state, prev_action)
+            target = reward + self.gamma * self.getQ(newState, opt_action)
+            
+            features = self.featureExtractor(prev_state, prev_action)
+            self.weights = utils.combine(1, self.weights, -(self.getStepSize() * (prediction - target)), features)
+
         return
+
+    def getQ(self, state, action):
+        score = 0
+        for f, v in state.items():
+            score += self.weights[f] * v
+        return score
 
     def readModel(self, path):
         w_string = open(path, 'r').read()

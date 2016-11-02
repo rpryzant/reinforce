@@ -1,5 +1,5 @@
 import math
-
+from collections import defaultdict
 
 def dotProduct(a, b):
     """ dot product of two vectors """
@@ -23,3 +23,13 @@ def angleBetween(a, b):
     a = normalize(a)
     b = normalize(b)
     return math.degrees(math.acos(dotProduct(a, b) / (magnitude(a) * magnitude(b))))
+
+def combine(c, x1, d, x2):
+    """linear combination of two sparse vectors: c(x1) + d(x2)
+    """
+    out = defaultdict(float)
+    for f in set(x1.keys()) | set(x2.keys()):
+        out[f] = (c * x1[f]) + (d * x2[f])
+    return out
+
+
