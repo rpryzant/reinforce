@@ -61,7 +61,7 @@ class Breakout(object):
         self.game_state = STATE_BALL_IN_PADDLE
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
-        self.ball_vel = [5, 5]
+        self.ball_vel = [5, 5]    # [x, y]
         self.game_over = False
 
 
