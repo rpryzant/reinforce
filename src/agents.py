@@ -58,7 +58,7 @@ class Agent(object):
                Returns:
                   reward: float
                      how much reward the agent got from state s_prev to s_cur
-v            """
+            """
             pass
 
         def get_opt_action(self, state):
