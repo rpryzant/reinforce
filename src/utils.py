@@ -49,5 +49,5 @@ def discretizeAngle(vec):
     return int(utils.angle(vec) / 10)
 
 def set_bit(bv, i):
-    return bv |= (1 << i)
+    return bv | (1 << i)
 

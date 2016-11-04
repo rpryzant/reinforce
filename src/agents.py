@@ -8,6 +8,8 @@ from collections import defaultdict
 import re
 import math
 from utils import *
+from experience import Experience
+
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -18,6 +20,13 @@ class Agent(object):
         self.numIters = 0  
         self.Q_values = {}                          # for controlling step size
         self.epsilon = 0.5                          # todo change to 1/n?
+        self.experience = {
+            'states': defaultdict(list),
+            'rewards': defaultdict(list),
+            'actions': defaultdict(list),
+            'Qs': defaultdict(list),
+            'weights': defaultdict(list)
+            }
         return
 
     @abc.abstractmethod
@@ -130,9 +139,31 @@ class Agent(object):
         """Writes model params to `path`"""
         return
 
+    @abc.abstractmethod
+    def calc_reward(self, state):
+        """look at the predecessor state of newState and
+           calculate whether any rewards transpired between the two.
+           
+           abstract because sub-agents will have different state representations
+        """
+
     def getStepSize(self):
         return 1.0 / math.sqrt(self.numIters)
 
+
+    def get_prev_state_action(self):
+        """retrieve most recently recorded state and action"""
+        if self.states != [] and self.actions != []:
+            return self.states[-1], self.actions[-1]
+        else:
+            return None, None
+
+
+    def log_action(self, reward, state, e_action):
+        """record r, s', a' (not nessicarily optimal) triple"""
+        self.experience['rewards'].append(reward)
+        self.experience['states'].append(state)
+        self.experience['actions'].append(e_action)
 
 
 class DiscreteQLearningAgent(Agent):
@@ -147,24 +178,39 @@ class DiscreteQLearningAgent(Agent):
         self.speed_step = 3         # num ball speeds
         return
 
+    def calc_reward(self, state):
+        # TODO currently implemented on binary phi
+        if len(self.experience['state']) == 0:
+            return 0
+        prev_state = self.experience['state'][-1]
+        # return +/- inf if agent won/lost the game
+        for key in state.keys():
+            if 'state' in key and not prev_state[key]:
+                if state[key] == STATE_WON:
+                    return float('Inf')
+                elif state[key] == STATE_GAME_OVER:
+                    return float('-Inf')
+        # return +3 for each broken brick
+        prev_num_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
+        cur_num_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
+        return (prev_num_bricks - cur_num_bricks) * BROKEN_BRICK_PTS
+        
+
     def processStateAndTakeAction(self, raw_state):
         self.numIters +n= 1
-
 
         def binary_phi(raw_state):
             """makes feature vector of binary indicator variables on possible state values
             """
             state = defaultdict(int)
-            state['state'+str(raw_state['game_state'])] = 1
-            state['ball_x'+str(int(raw_state['ball'].x) / self.grid_step)] = 1
-            state['ball_y'+str(int(raw_state['ball'].y) / self.grid_step)] = 1
-            state['paddle_x'+str(int(raw_state['paddle'].x) / self.grid_step)] = 1
+            state['state-'+str(raw_state['game_state'])] = 1
+            state['ball_x-'+str(int(raw_state['ball'].x) / self.grid_step)] = 1
+            state['ball_y-'+str(int(raw_state['ball'].y) / self.grid_step)] = 1
+            state['paddle_x-'+str(int(raw_state['paddle'].x) / self.grid_step)] = 1
             for brick in raw_state['bricks']:
-                state['brick('+str(brick.x)+','+str(brick.y)+')'] = 1
-            state['ball_angle'+str( angle(raw_state['ball_vel']) / self.angle_step )] = 1
+                state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
+            state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / self.angle_step ))] = 1
 
-            state['score'] = raw_state['score']      # <-- do we want the score ? State will be too large
-            
             return state
 
 
@@ -208,17 +254,17 @@ class DiscreteQLearningAgent(Agent):
         state = binary_phi(raw_state)
         # compare state to experience and see how much reward 
         #    the agent recieved from previous to current state
-        reward = calc_reward(state)
+        reward = self.calc_reward(state)
         # calculate the optimal action to take given current Q
         opt_action = get_opt_action(state)
         # retrieve prev state and action from experience, then 
         #    use all info to update Q
-        prev_state, prev_action = sa_from_experience()
-        update_Q(prev_state, prev_action, reward, state, opt_action)x
+        prev_state, prev_action = self.get_prev_state_action()
+        update_Q(prev_state, prev_action, reward, state, opt_action)
         # select an epsilon-greedy action
         e_action = take_action(getStepSize(), opt_action)
         # record everything into experience
-        log_experience(reward, state, e_action)
+        self.log_experience(reward, state, e_action)
         # give e-action back to game
         return e_action
 
@@ -233,9 +279,6 @@ class DiscreteQLearningAgent(Agent):
         file = open(path, 'w')
         file.write(str(self.Q_values))
         file.close()
-
-
-
 
 
 
