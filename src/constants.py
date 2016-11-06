@@ -31,7 +31,6 @@ STATE_PLAYING = 1
 STATE_WON = 2
 STATE_GAME_OVER = 3
 
-
 # Input constants
 INPUT_L = 'L'
 INPUT_R = 'R'
@@ -40,3 +39,5 @@ INPUT_SPACE = 'sp'
 INPUT_ENTER = 'ret'
 INPUT_QUIT = 'Q'
 
+# game constants
+BROKEN_BRICK_PTS = 3

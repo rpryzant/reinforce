@@ -32,4 +32,22 @@ def combine(c, x1, d, x2):
         out[f] = (c * x1[f]) + (d * x2[f])
     return out
 
+def discretizeLocation(x, y):
+    """converts continuous coordinates in R^2 to discrete location measurement 
+
+    does so by converting game board to grid of 20x20 pixel squares, then
+      gives the index of the square that (x, y) is in
+    """
+    entries_in_row = SCREEN_SIZE[0] / 20
+    x_grid = x / 10
+    y_grid = y / 10
+    return x_grid + y_grid * (SCREEN_SIZE[0] / 20)
+
+def discretizeAngle(vec):
+    """buckets the continuous angle of a vector into one of 16 discrete angle categories
+    """
+    return int(utils.angle(vec) / 10)
+
+def set_bit(bv, i):
+    return bv | (1 << i)
 
