@@ -7,8 +7,10 @@ from constants import *
 from collections import defaultdict
 import re
 import math
+import random
 from utils import *
-from experience import Experience
+import tensorflow as tf
+# from experience import Experience
 
 
 class Agent(object):
@@ -197,7 +199,7 @@ class DiscreteQLearningAgent(Agent):
         
 
     def processStateAndTakeAction(self, raw_state):
-        self.numIters +n= 1
+        self.numIters = 1
 
         def binary_phi(raw_state):
             """makes feature vector of binary indicator variables on possible state values
@@ -221,7 +223,7 @@ class DiscreteQLearningAgent(Agent):
             state['game_state'] = raw_state['game_state']
             state['ball_x'] = raw_state['ball'].x / self.grid_step
             state['ball_y'] = raw_state['ball'].y / self.grid_step
-            state['paddle_x'] = raw_state['paddle'].x) / self.grid_step
+            state['paddle_x'] = raw_state['paddle'].x / self.grid_step
             state['ball_angle'] = int(angle([raw_state['ball_vel'][0], raw_state['ball_vel'][1]]) / self.angle_step)
             state['ball_speed'] = magnitude(raw_state['ball_vel']) / self.speed_step
             # TODO - discretize on bricks remaining
@@ -249,6 +251,10 @@ class DiscreteQLearningAgent(Agent):
 
             self.Q_values[prev_state][prev_action] = (1 - eta) * prediction + eta * target
 
+        def take_action(self, epsilon, opt_action):
+            num = random.random()
+            rand_action = [self.experience['actions'][random.randint(0, len(self.experience['actions']))]]
+            return rand_action if num <= epsilon else opt_action
 
         # extract features from state
         state = binary_phi(raw_state)
@@ -264,7 +270,8 @@ class DiscreteQLearningAgent(Agent):
         # select an epsilon-greedy action
         e_action = take_action(getStepSize(), opt_action)
         # record everything into experience
-        self.log_experience(reward, state, e_action)
+        self.log_action(reward, state, e-action)
+        # self.log_experience(reward, state, e_action)
         # give e-action back to game
         return e_action
 
@@ -279,9 +286,6 @@ class DiscreteQLearningAgent(Agent):
         file = open(path, 'w')
         file.write(str(self.Q_values))
         file.close()
-
-
-
 
 
 class FuncApproxQLearningAgent(Agent):
@@ -321,6 +325,41 @@ class FuncApproxQLearningAgent(Agent):
         file.write(str(self.weights))
         file.close()
 
+class NeuralNetworkAgent(Agent):
+    """Q learning agent that uses function approximation to deal
+       with continuous states
+    """
+    def __init__(self, gamma=0.99):
+        super(NeuralNetworkAgent, self).__init__()
+        self.weights = defaultdict(float)
+        w_in = tf.Variable(tf.random_normal([14, 32], stddev=0.1),
+                      name="weights_input")
+        w_h1 = tf.Variable(tf.random_normal([32, 64], stddev=0.1),
+                      name="weights_hidden1")
+        w_h2 = tf.Variable(tf.random_normal([64, 32], stddev=0.1),
+                      name="weights_hidden2")
+        w_o = tf.Variable(tf.random_normal([32, 2], stddev=0.1),
+                      name="weights_output")
+        self.weights = {'W_in':w_in, 'W_h1': w_h1, 'W_h2': w_h2, 'W_o': w_o}
+        X = tf.placeholder("float", [1,14])
+        y = tf.placeholder("float", [2,1])
+        self.neuralNetwork = model(X, w_in, w_h1, w_h2, w_o)
+        cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(pred, y))
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+        self.gamma = gamma
+        return
+
+    def model(X, w_in, w_h1, w_h2, w_o):
+      layer1 = tf.relu(tf.matmul(X,w_in))
+      layer2 = tf.relu(tf.matmul(layer1,w_h1))
+      layer3 = tf.relu(tf.matmul(layer2,w_h2))
+      output_layer = tf.matmul(layer3, w_o)
+      return output_layer
+
+    def processStateAndTakeAction(self, state):
+        def update_Q(self, prev_state, prev_action, reward, newState, opt_action):
+          pass
+     
 
 class Baseline(Agent):
     """dumb agent that always follows the ball"""

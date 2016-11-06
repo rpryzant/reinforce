@@ -1,10 +1,5 @@
 """
 Breakout
-
-
-TODO
-   - track previous state, action, rewards for Q-learning, model-free learning, etc
-   - let user quit from keyboard
 """
 
 import sys
@@ -63,8 +58,6 @@ class Breakout(object):
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
         self.ball_vel = [5, 5]    # [x, y]
         self.game_over = False
-
-
         self.create_bricks()
         
 
@@ -231,8 +224,7 @@ class Breakout(object):
         
 
     def get_state(self):
-        """ contstructs and returns a vector representation of current game state """
-        # TODO - WORK ON STATE VECTOR
+        """ constructs and returns a vector representation of current game state """
         state = {
             'game_state': self.game_state,
             'ball': self.ball,
