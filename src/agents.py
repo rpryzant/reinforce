@@ -10,7 +10,7 @@ import math
 import random
 from utils import *
 import tensorflow as tf
-# from experience import Experience
+import string
 
 
 class Agent(object):
@@ -213,14 +213,18 @@ class DiscreteQLearningAgent(Agent):
         # give e-action back to game
         return e_action
 
-
-    def readModel(self, path):
+    def read_model(self, path):
         Q_string = open(path, 'r').read()
+        # fiddle with the Q string a little to make it interpretable by python 
         Q_string = re.sub("<type '", "", Q_string)
         Q_string = re.sub("'>", "", Q_string)
+        Q_string = string.replace(Q_string, ',)', ')')
+        Q_string = re.sub("<function <lambda>[^\,]*", "lambda: defaultdict(float)", Q_string)
+
         self.Q_values = eval(Q_string)
 
-    def writeModel(self, path):
+
+    def write_model(self, path):
         file = open(path, 'w')
         file.write(str(self.Q_values))
         file.close()
@@ -256,6 +260,7 @@ class FuncApproxQLearningAgent(Agent):
         w_string = open(path, 'r').read()
         w_string = re.sub("<type '", "", w_string)
         w_string = re.sub("'>", "", w_string)
+        w_string = string.replace(w_string, ",)", ")")
         self.weights = eval(w.string)
 
     def writeModel(self, path):

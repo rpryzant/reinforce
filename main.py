@@ -19,7 +19,7 @@ def main(args, parser):
     elif args.p == "oracle":
         game = breakout.OracleControlledBreakout(args.v, args.d, args.b)
     elif args.p == 'simpleQLearning':
-        game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b, args.wr)
+        game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b, args.wr, args.rd)
     game.run()
 
 if __name__ == "__main__":
@@ -33,6 +33,7 @@ if __name__ == "__main__":
     parser.add_argument('-d', action="store_true", help="display game")
     parser.add_argument('-b', type=int, default=1, help="num batch iterations (defaults to 1)")
     parser.add_argument('-wr', type=bool, default=False, help="write model to file when done")
+    parser.add_argument('-rd', type=str, help="read model parameters from file")
     args = parser.parse_args()
     args.func(args, parser)
 

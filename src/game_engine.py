@@ -17,11 +17,12 @@ class Breakout(object):
     Implements basically all of the game logic. The only thing that remains
        for subclasses to flesh out is the run() method
     """
-    def __init__(self, verbose, display, batches, write_model=False):
+    def __init__(self, verbose, display, batches, write_model=False, model_path=None):
         self.batches = batches
         self.verbose = verbose
         self.display = display
         self.write_model = write_model
+        self.model_path = model_path
 
         self.experience = []
 
@@ -300,8 +301,8 @@ class HumanControlledBreakout(Breakout):
     """
     Breakout subclass which takes inputs from the keyboard during run()
     """
-    def __init__(self, verbose, display, batches, write_model):
-        super(HumanControlledBreakout, self).__init__(verbose, display, batches, write_model)
+    def __init__(self, verbose, display, batches, write_model, model_path):
+        super(HumanControlledBreakout, self).__init__(verbose, display, batches, write_model, model_path)
 
     def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
@@ -329,9 +330,11 @@ class BotControlledBreakout(Breakout):
     """
 
     """ TODO - create state vectors, don't have run draw stuff, give state vectors to learning agent (in another file""" 
-    def __init__(self, agent, verbose, display, batches, write_model):
-        super(BotControlledBreakout, self).__init__(verbose, display, batches, write_model)
+    def __init__(self, agent, verbose, display, batches, write_model, model_path):
+        super(BotControlledBreakout, self).__init__(verbose, display, batches, write_model, model_path)
         self.agent = agent
+        if self.model_path is not None:
+            self.agent.read_model(self.model_path)
 
     def run(self):
         while 1:            
@@ -345,7 +348,7 @@ class BotControlledBreakout(Breakout):
             # TODO PRINT FINAL SUMMARY STATS FOR BOT IF VERBOSE
             print 'batch run done!'
             if self.write_model:
-                self.agent.writeModel('model_params.txt')
+                self.agent.write_model('model_params.txt')
             quit()
 
 class OracleControlledBreakout(Breakout):
