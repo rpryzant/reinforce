@@ -112,23 +112,6 @@ class Agent(object):
             """
             pass
 
-        def log_experience(self, reward, state, e_action):
-            """Records previous reward, new state & action (r, s', a') into
-                 agent's memory of experience
-
-               Args:
-                  reward: float
-                     how much reward the agent got from s to s'
-                  state: dict
-                     current game state (s')
-                  e_action: list
-                     the epsilon-greedy action that will be passed back to the game
-               Returns:
-                  *
-            """
-            pass
-
-
         return
 
     @abc.abstractmethod
@@ -199,7 +182,7 @@ class DiscreteQLearningAgent(Agent):
         
 
     def processStateAndTakeAction(self, raw_state):
-        self.numIters = 1
+        self.numIters += 1
 
         def binary_phi(raw_state):
             """makes feature vector of binary indicator variables on possible state values
