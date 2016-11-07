@@ -258,7 +258,7 @@ class Breakout(object):
                 'bricks_remaining': len(self.bricks)
                 }]
 
-        if self.batches > 1:
+        if self.batches >= 1:
             self.batches -= 1
             self.take_input([INPUT_ENTER])
         else:
@@ -338,6 +338,15 @@ class BotControlledBreakout(Breakout):
             self.execute_turn()
             self.take_input(self.agent.processStateAndTakeAction(self.get_state()))
 
+    def end_game(self):
+        super(BotControlledBreakout, self).end_game()
+        print self.batches, ' games left'
+        if self.batches == 0:
+            # TODO PRINT FINAL SUMMARY STATS FOR BOT IF VERBOSE
+            print 'batch run done!'
+            if self.write_model:
+                self.agent.writeModel('model_params.txt')
+            quit()
 
 class OracleControlledBreakout(Breakout):
     """ 
