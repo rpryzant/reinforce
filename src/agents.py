@@ -23,11 +23,11 @@ class Agent(object):
         self.Q_values = {}                          # for controlling step size
         self.epsilon = 0.5                          # todo change to 1/n?
         self.experience = {
-            'states': defaultdict(list),
-            'rewards': defaultdict(list),
-            'actions': defaultdict(list),
-            'Qs': defaultdict(list),
-            'weights': defaultdict(list)
+            'states': [],
+            'rewards': [],
+            'actions': [],
+            'Qs': [],
+            'weights': []
             }
         return
 
@@ -138,10 +138,10 @@ class Agent(object):
 
     def get_prev_state_action(self):
         """retrieve most recently recorded state and action"""
-        if self.states != [] and self.actions != []:
-            return self.states[-1], self.actions[-1]
+        if self.experience['states'] != [] and self.experience['actions'] != []:
+            return self.experience['states'][-1], self.experience['actions'][-1]
         else:
-            return None, None
+            return {}, []
 
 
     def log_action(self, reward, state, e_action):
@@ -156,7 +156,7 @@ class DiscreteQLearningAgent(Agent):
     """
     def __init__(self, gamma=0.99, eta=0.5):
         super(DiscreteQLearningAgent, self).__init__()
-        self.Q_values = defaultdict(float)
+        self.Q_values = defaultdict(lambda: defaultdict(float))
         self.gamma = gamma
         self.grid_step = 10         # num x, y buckets to discretize on
         self.angle_step = 8         # num angle buckets to discretize on
@@ -192,8 +192,8 @@ class DiscreteQLearningAgent(Agent):
             state['ball_x-'+str(int(raw_state['ball'].x) / self.grid_step)] = 1
             state['ball_y-'+str(int(raw_state['ball'].y) / self.grid_step)] = 1
             state['paddle_x-'+str(int(raw_state['paddle'].x) / self.grid_step)] = 1
-            for brick in raw_state['bricks']:
-                state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
+            # for brick in raw_state['bricks']:
+            #     state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
             state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / self.angle_step ))] = 1
 
             return state
@@ -229,7 +229,7 @@ class DiscreteQLearningAgent(Agent):
             return max_action
 
 
-        def update_Q(self, prev_state, prev_action, reward, state, opt_action):
+        def update_Q(prev_state, prev_action, reward, state, opt_action):
             serialized_prev_state = serializeBinaryVector(prev_state)
             serialized_state = serializeBinaryVector(state)
             serialized_prev_action = serializeList(prev_action)
@@ -241,9 +241,9 @@ class DiscreteQLearningAgent(Agent):
 
             self.Q_values[serialized_prev_state][serialized_prev_action] = (1 - eta) * prediction + eta * target
 
-        def take_action(self, epsilon, opt_action):
+        def take_action(epsilon, opt_action):
             num = random.random()
-            possibleActions = [INPUT_L, INPUT_R]
+            possibleActions = [INPUT_L, INPUT_R, INPUT_SPACE]
             rand_action = [random.choice(possibleActions)]
             return rand_action if num <= epsilon else opt_action
 
@@ -260,9 +260,9 @@ class DiscreteQLearningAgent(Agent):
         prev_state, prev_action = self.get_prev_state_action()
         update_Q(prev_state, prev_action, reward, state, opt_action)
         # select an epsilon-greedy action
-        e_action = take_action(getStepSize(), opt_action)
+        e_action = take_action(self.getStepSize(), opt_action)
         # record everything into experience
-        self.log_action(reward, state, e-action)
+        self.log_action(reward, state, e_action)
         # self.log_experience(reward, state, e_action)
         # give e-action back to game
         return e_action
