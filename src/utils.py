@@ -51,8 +51,14 @@ def discretizeAngle(vec):
 def set_bit(bv, i):
     return bv | (1 << i)
 
-def serializeBinaryVector(vec):
-    return '|'.join(sorted(vec.keys()))
+def serializeBinaryVector(vec, use_bricks=False):
+    if use_bricks:
+        return '|'.join(sorted(vec.keys()))
+    else:
+        return '|'.join(k for k in sorted(vec.keys()) if 'brick' not in k)
 
 def serializeList(l):
     return tuple(sorted(l))
+
+def deserializeAction(a):
+    return list(a)

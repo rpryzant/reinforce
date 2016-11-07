@@ -154,37 +154,46 @@ class Agent(object):
 class DiscreteQLearningAgent(Agent):
     """Simple q learning agent (no function aproximation)
     """
-    def __init__(self, gamma=0.99, eta=0.5):
+    def __init__(self, gamma=0.99, epsilon=0.9):
         super(DiscreteQLearningAgent, self).__init__()
         self.Q_values = defaultdict(lambda: defaultdict(float))
-        self.gamma = gamma
+        self.gamma = gamma          # discount factor
+        self.epsilon = epsilon      # exploration prob
         self.grid_step = 10         # num x, y buckets to discretize on
         self.angle_step = 8         # num angle buckets to discretize on
         self.speed_step = 3         # num ball speeds
         return
 
+
     def calc_reward(self, state):
-        # TODO currently implemented on binary phi
+        """ compares the current state (param) to previous state (in experience)
+            and calculates corresponding reward
+        """
         if len(self.experience['states']) == 0:
             return 0
-        prev_state = self.experience['states'][-1]
-        # return +/- inf if agent won/lost the game
+
         def getDistancePaddleBall(state):
             for key in state.keys():
                 if 'ball_x-' in key:
                     ball_x = int(key.replace('ball_x-',''))
                 if 'paddle_x-' in key:
                     paddle_x = int(key.replace('paddle_x-',''))
-            return abs(paddle_x - ball_x)*self.grid_step 
+            return abs(paddle_x - ball_x) * self.grid_step 
+
+        prev_state = self.experience['states'][-1]
+
+        # return +/-1k if game is won/lost
         for key in state.keys():
             if 'state' in key and not prev_state[key]:
                 if str(STATE_WON) in key:
                     return 1000.0
                 elif str(STATE_GAME_OVER) in key:
-                    return -1000.0 - getDistancePaddleBall(state)*10
+                    return -1000.0 - getDistancePaddleBall(state)
+
         # return +3 for each broken brick
         prev_num_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
         cur_num_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
+
         return (prev_num_bricks - cur_num_bricks) * BROKEN_BRICK_PTS
         
 
@@ -199,51 +208,37 @@ class DiscreteQLearningAgent(Agent):
             state['ball_x-'+str(int(raw_state['ball'].x) / self.grid_step)] = 1
             state['ball_y-'+str(int(raw_state['ball'].y) / self.grid_step)] = 1
             state['paddle_x-'+str(int(raw_state['paddle'].x) / self.grid_step)] = 1
-            # for brick in raw_state['bricks']:
-            #     state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
             state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / self.angle_step ))] = 1
+            # Bricks are needed to calculate rewards, but are thrown out during serialization.
+            # This means bricks won't be used for Q-learning which is good (they're a huge 
+            #    explosion on state space)
+            for brick in raw_state['bricks']:
+                state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
 
             return state
 
 
-        def discrete_phi(raw_state):
-            """makes feature vector of discretized state values
-               ***DEPRECIATED***
-            """
-            state = defaultdict(int)
-            state['game_state'] = raw_state['game_state']
-            state['ball_x'] = raw_state['ball'].x / self.grid_step
-            state['ball_y'] = raw_state['ball'].y / self.grid_step
-            state['paddle_x'] = raw_state['paddle'].x / self.grid_step
-            state['ball_angle'] = int(angle([raw_state['ball_vel'][0], raw_state['ball_vel'][1]]) / self.angle_step)
-            state['ball_speed'] = magnitude(raw_state['ball_vel']) / self.speed_step
-            # TODO - discretize on bricks remaining
-            #      - i'm thinking make a bitvector for presence of a brick in each col
-            #          then use int representation as that for discrete variable?
-            #      - problem though 2^9-1 possibilities...~512...pretty damn big
-            #      -e.g. if all 9 bricks are present bv would be 111111111 
-            
-
         def get_opt_action(state):
+            """gets the optimal action for current state using current Q values
+            """ 
             serialized_state = serializeBinaryVector(state)
             max_action = []
             max_value = -float('infinity')
-            for action in self.Q_values[serialized_state].keys():
-                serialized_action = serializeList(action)
+
+            # TODO -  self.Q_values[serialized_state] is always an empty list. means we haven't 
+            #            explored very well
+            for serialized_action in self.Q_values[serialized_state].keys():
                 if self.Q_values[serialized_state][serialized_action] > max_value :
                     max_value = self.Q_values[serialized_state][serialized_action]
-                    max_action = [action]
-            if 'R' in str(max_action):
-                return [INPUT_R]
-            if 'L' in str(max_action):
-                return [INPUT_L]
-
-            return []
+                    max_action = deserializeAction(serialized_action)
 
             return max_action
 
 
         def update_Q(prev_state, prev_action, reward, state, opt_action):
+            """Update Q towards interpolation between prediction and target
+               for expected utility of being in state s and taking action a
+            """
             serialized_prev_state = serializeBinaryVector(prev_state)
             serialized_state = serializeBinaryVector(state)
             serialized_prev_action = serializeList(prev_action)
@@ -256,19 +251,20 @@ class DiscreteQLearningAgent(Agent):
             self.Q_values[serialized_prev_state][serialized_prev_action] = (1 - eta) * prediction + eta * target
 
         def take_action(epsilon, opt_action):
-            num = random.random()
-            possibleActions = [INPUT_L, INPUT_R]#, INPUT_SPACE]
-            rand_action = [random.choice(possibleActions)]
+            # press space if game has yet to start or if ball is in paddle
             if self.experience['actions'] == []:
                 return [INPUT_SPACE]
-            if 'state-'+str(STATE_BALL_IN_PADDLE) in self.experience['states'][-1]:
+            elif 'state-'+str(STATE_BALL_IN_PADDLE) in self.experience['states'][-1]:
                 return [INPUT_SPACE]
-            past_action = self.experience['actions'][-1]
-            if past_action == [INPUT_L] or past_action == [INPUT_R]:
-                if random.random() < 0.9:
-                    rand_action = past_action
-            return rand_action if num <= epsilon else opt_action
 
+            # otherwise take random action with prob epsilon
+            # re-take previous action with probability 2/3
+            elif random.random() < self.epsilon:
+                possibleActions = [[INPUT_L], [INPUT_R]] + [self.experience['actions'][-1]]
+                return random.choice(possibleActions)
+            
+            # otherwise take optimal action
+            return opt_action
 
         # extract features from state
         state = binary_phi(raw_state)
@@ -279,9 +275,6 @@ class DiscreteQLearningAgent(Agent):
         opt_action = get_opt_action(state)
         # retrieve prev state and action from experience, then 
         #    use all info to update Q
-
-        print opt_action
-
         prev_state, prev_action = self.get_prev_state_action()
         update_Q(prev_state, prev_action, reward, state, opt_action)
         # select an epsilon-greedy action
