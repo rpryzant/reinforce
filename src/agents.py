@@ -169,12 +169,19 @@ class DiscreteQLearningAgent(Agent):
             return 0
         prev_state = self.experience['states'][-1]
         # return +/- inf if agent won/lost the game
+        def getDistancePaddleBall(state):
+            for key in state.keys():
+                if 'ball_x-' in key:
+                    ball_x = int(key.replace('ball_x-',''))
+                if 'paddle_x-' in key:
+                    paddle_x = int(key.replace('paddle_x-',''))
+            return abs(paddle_x - ball_x)*self.grid_step 
         for key in state.keys():
             if 'state' in key and not prev_state[key]:
-                if state[key] == STATE_WON:
+                if str(STATE_WON) in key:
                     return 1000.0
-                elif state[key] == STATE_GAME_OVER:
-                    return -1000.0
+                elif str(STATE_GAME_OVER) in key:
+                    return -1000.0 - getDistancePaddleBall(state)*10
         # return +3 for each broken brick
         prev_num_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
         cur_num_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
@@ -243,8 +250,16 @@ class DiscreteQLearningAgent(Agent):
 
         def take_action(epsilon, opt_action):
             num = random.random()
-            possibleActions = [INPUT_L, INPUT_R, INPUT_SPACE]
+            possibleActions = [INPUT_L, INPUT_R]#, INPUT_SPACE]
             rand_action = [random.choice(possibleActions)]
+            if self.experience['actions'] == []:
+                return [INPUT_SPACE]
+            if 'state-'+str(STATE_BALL_IN_PADDLE) in self.experience['states'][-1]:
+                return [INPUT_SPACE]
+            past_action = self.experience['actions'][-1]
+            if past_action == [INPUT_L] or past_action == [INPUT_R]:
+                if random.random() < 0.9:
+                    rand_action = past_action
             return rand_action if num <= epsilon else opt_action
 
 
