@@ -218,26 +218,33 @@ class DiscreteQLearningAgent(Agent):
             
 
         def get_opt_action(state):
+            serialized_state = serializeBinaryVector(state)
             max_action = []
             max_value = -float('infinity')
-            for action in self.Q_values[state].keys():
-                if self.Q_values[state][action] > max_value :
-                    max_value = self.Q_values[state][action]
+            for action in self.Q_values[serialized_state].keys():
+                serialized_action = serializeList(action)
+                if self.Q_values[serialized_state][serialized_action] > max_value :
+                    max_value = self.Q_values[serialized_state][serialized_action]
                     max_action = [action]
             return max_action
 
 
         def update_Q(self, prev_state, prev_action, reward, state, opt_action):
+            serialized_prev_state = serializeBinaryVector(prev_state)
+            serialized_state = serializeBinaryVector(state)
+            serialized_prev_action = serializeList(prev_action)
+            serialized_opt_action = serializeList(opt_action)
             eta = self.getStepSize()
 
-            prediction = self.Q_values[prev_state][prev_aciton]
-            target = reward + self.gamma * self.Q_values[state][opt_action]
+            prediction = self.Q_values[serialized_prev_state][serialized_prev_action]
+            target = reward + self.gamma * self.Q_values[serialized_state][serialized_opt_action]
 
-            self.Q_values[prev_state][prev_action] = (1 - eta) * prediction + eta * target
+            self.Q_values[serialized_prev_state][serialized_prev_action] = (1 - eta) * prediction + eta * target
 
         def take_action(self, epsilon, opt_action):
             num = random.random()
-            rand_action = [self.experience['actions'][random.randint(0, len(self.experience['actions']))]]
+            possibleActions = [INPUT_L, INPUT_R]
+            rand_action = [random.choice(possibleActions)]
             return rand_action if num <= epsilon else opt_action
 
 
