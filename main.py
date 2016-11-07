@@ -18,6 +18,8 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agents.Baseline(), args.v, args.d, args.b)
     elif args.p == "oracle":
         game = breakout.OracleControlledBreakout(args.v, args.d, args.b)
+    elif args.p == 'simpleQLearning':
+        game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b)
     game.run()
 
 if __name__ == "__main__":

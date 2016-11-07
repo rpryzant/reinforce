@@ -155,7 +155,7 @@ class DiscreteQLearningAgent(Agent):
     """Simple q learning agent (no function aproximation)
     """
     def __init__(self, gamma=0.99, eta=0.5):
-        super(SimpleQLearningAgent, self).__init__()
+        super(DiscreteQLearningAgent, self).__init__()
         self.Q_values = defaultdict(float)
         self.gamma = gamma
         self.grid_step = 10         # num x, y buckets to discretize on
@@ -165,9 +165,9 @@ class DiscreteQLearningAgent(Agent):
 
     def calc_reward(self, state):
         # TODO currently implemented on binary phi
-        if len(self.experience['state']) == 0:
+        if len(self.experience['states']) == 0:
             return 0
-        prev_state = self.experience['state'][-1]
+        prev_state = self.experience['states'][-1]
         # return +/- inf if agent won/lost the game
         for key in state.keys():
             if 'state' in key and not prev_state[key]:
@@ -239,6 +239,7 @@ class DiscreteQLearningAgent(Agent):
             num = random.random()
             rand_action = [self.experience['actions'][random.randint(0, len(self.experience['actions']))]]
             return rand_action if num <= epsilon else opt_action
+
 
         # extract features from state
         state = binary_phi(raw_state)
