@@ -172,9 +172,9 @@ class DiscreteQLearningAgent(Agent):
         for key in state.keys():
             if 'state' in key and not prev_state[key]:
                 if state[key] == STATE_WON:
-                    return float('Inf')
+                    return 1000.0
                 elif state[key] == STATE_GAME_OVER:
-                    return float('-Inf')
+                    return -1000.0
         # return +3 for each broken brick
         prev_num_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
         cur_num_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
@@ -201,6 +201,7 @@ class DiscreteQLearningAgent(Agent):
 
         def discrete_phi(raw_state):
             """makes feature vector of discretized state values
+               ***DEPRECIATED***
             """
             state = defaultdict(int)
             state['game_state'] = raw_state['game_state']
