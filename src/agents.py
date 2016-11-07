@@ -233,6 +233,13 @@ class DiscreteQLearningAgent(Agent):
                 if self.Q_values[serialized_state][serialized_action] > max_value :
                     max_value = self.Q_values[serialized_state][serialized_action]
                     max_action = [action]
+            if 'R' in str(max_action):
+                return [INPUT_R]
+            if 'L' in str(max_action):
+                return [INPUT_L]
+
+            return []
+
             return max_action
 
 
@@ -272,6 +279,9 @@ class DiscreteQLearningAgent(Agent):
         opt_action = get_opt_action(state)
         # retrieve prev state and action from experience, then 
         #    use all info to update Q
+
+        print opt_action
+
         prev_state, prev_action = self.get_prev_state_action()
         update_Q(prev_state, prev_action, reward, state, opt_action)
         # select an epsilon-greedy action
