@@ -16,18 +16,17 @@ import tensorflow as tf
 class Agent(object):
     """Abstract base class for game-playing agents
     """
-
     def __init__(self):
         self.experience = []
         self.numIters = 0  
         self.Q_values = {}                          # for controlling step size
         self.epsilon = 0.5                          # todo change to 1/n?
         self.experience = {
-            'states': [],
-            'rewards': [],
-            'actions': [],
-            'Qs': [],
-            'weights': []
+            'states': [],                           # list of sparse vectors
+            'rewards': [],                          # list of floats
+            'actions': [],                          # list of list of strings
+            'Qs': [],                               # list of dicts
+            'weights': []                           # list of sparse vectors
             }
         return
 
@@ -41,77 +40,6 @@ class Agent(object):
              - uses (s, a, r, s') to update its parameters
              - Chooses an a' to give back to the game/environment
         """
-
-        def phi(self, raw_state):
-            """Feature extractor function
-
-               Args:
-                  raw_state: dict
-                     game state as represented by raw game objects
-               Returns:
-                  state: dict
-                     state dict that is amenable to learning (ie. state features)
-            """
-            pass
-
-        def calc_reward(self, state):
-            """Reward calculation function. Looks at current state (given)
-                  and previous state (in experience) and calculates any rewards
-                  that occured in the intervening transition.
-               Rewards are given if:
-                  -a brick is broken (+3)
-                  -the agent won (+inf)
-                  -the agent lost (-inf)
-
-               Args:
-                  state: dict
-                     feature vector of game state
-               Returns:
-                  reward: float
-                     how much reward the agent got from state s_prev to s_cur
-            """
-            pass
-
-        def get_opt_action(self, state):
-            """Produce an action given a state
-
-               Args:
-                  state: dict
-                      feature vector of game state
-               Returns:
-                  action: list
-                      list of game operations, e.g. [INPUT_SPACE, INPUT_L, ..]
-            """
-            pass
-
-        def update_Q(self, state, opt_action):
-            """Incorporates feedback on state and action by updating 
-                 agent's representation of expected utility (Q)
-                 
-               Args:
-                  state: dict
-                      feature vector of game state
-                  opt_action: list
-                      optimal list of game operaions
-               Returns:
-                  *
-            """
-            pass
-
-        def take_action(self, epsilon, opt_action):
-            """Uses e-greedy approach to chose an action
-
-               Args:
-                   epsilon: float
-                       prob of takin random action
-                   opt_action: list
-                       optimal action - action that maximizes expected utility
-               Returns:
-                   e_action: list
-                       epsilon-greedy action
-            """
-            pass
-
         return
 
     @abc.abstractmethod
@@ -131,10 +59,10 @@ class Agent(object):
            
            abstract because sub-agents will have different state representations
         """
+        return
 
     def getStepSize(self):
         return 1.0 / math.sqrt(self.numIters)
-
 
     def get_prev_state_action(self):
         """retrieve most recently recorded state and action"""
@@ -142,7 +70,6 @@ class Agent(object):
             return self.experience['states'][-1], self.experience['actions'][-1]
         else:
             return {}, []
-
 
     def log_action(self, reward, state, e_action):
         """record r, s', a' (not nessicarily optimal) triple"""
@@ -181,8 +108,7 @@ class DiscreteQLearningAgent(Agent):
             return abs(paddle_x - ball_x) * self.grid_step 
 
         prev_state = self.experience['states'][-1]
-
-        # return +/-1k if game is won/lost
+        # return +/-1k if game is won/lost, with a little reward for dying closer to the ball
         for key in state.keys():
             if 'state' in key and not prev_state[key]:
                 if str(STATE_WON) in key:
@@ -190,16 +116,15 @@ class DiscreteQLearningAgent(Agent):
                 elif str(STATE_GAME_OVER) in key:
                     return -1000.0 - getDistancePaddleBall(state)
 
-        # return +3 for each broken brick
-        prev_num_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
-        cur_num_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
-
-        return (prev_num_bricks - cur_num_bricks) * BROKEN_BRICK_PTS
-        
+        # return +3 for each broken brick if we're continuing an ongoing game
+        for key in state.keys():
+            if 'state' in key and prev_state[key]:
+                prev_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
+                cur_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
+                return (prev_bricks - cur_bricks) * BROKEN_BRICK_PTS
+        return 0
 
     def processStateAndTakeAction(self, raw_state):
-        self.numIters += 1
-
         def binary_phi(raw_state):
             """makes feature vector of binary indicator variables on possible state values
             """
@@ -211,7 +136,8 @@ class DiscreteQLearningAgent(Agent):
             state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / self.angle_step ))] = 1
             # Bricks are needed to calculate rewards, but are thrown out during serialization.
             # This means bricks won't be used for Q-learning which is good (they're a huge 
-            #    explosion on state space)
+            #    explosion on state space), but are still remembered in case we need that info
+            #    for other reasons
             for brick in raw_state['bricks']:
                 state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
 
@@ -227,11 +153,12 @@ class DiscreteQLearningAgent(Agent):
 
             # TODO -  self.Q_values[serialized_state] is always an empty list. means we haven't 
             #            explored very well
+            # TODO - no movement ( () ) is always remembered in self.Q_values[serialized_state]
+            #            do we want to allow this?
             for serialized_action in self.Q_values[serialized_state].keys():
                 if self.Q_values[serialized_state][serialized_action] > max_value :
                     max_value = self.Q_values[serialized_state][serialized_action]
                     max_action = deserializeAction(serialized_action)
-
             return max_action
 
 
@@ -260,12 +187,13 @@ class DiscreteQLearningAgent(Agent):
             # otherwise take random action with prob epsilon
             # re-take previous action with probability 2/3
             elif random.random() < self.epsilon:
-                possibleActions = [[INPUT_L], [INPUT_R]] + [self.experience['actions'][-1]]
+                possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
                 return random.choice(possibleActions)
             
             # otherwise take optimal action
             return opt_action
 
+        self.numIters += 1
         # extract features from state
         state = binary_phi(raw_state)
         # compare state to experience and see how much reward 

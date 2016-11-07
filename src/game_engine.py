@@ -17,10 +17,11 @@ class Breakout(object):
     Implements basically all of the game logic. The only thing that remains
        for subclasses to flesh out is the run() method
     """
-    def __init__(self, verbose, display, batches):
+    def __init__(self, verbose, display, batches, write_model=False):
         self.batches = batches
         self.verbose = verbose
         self.display = display
+        self.write_model = write_model
 
         self.experience = []
 
@@ -268,6 +269,7 @@ class Breakout(object):
                 print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
                 print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
                 print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
+                
 
     def discretizeLocation(self, x, y):
         """ 
@@ -298,8 +300,8 @@ class HumanControlledBreakout(Breakout):
     """
     Breakout subclass which takes inputs from the keyboard during run()
     """
-    def __init__(self, verbose, display, batches):
-        super(HumanControlledBreakout, self).__init__(verbose, display, batches)
+    def __init__(self, verbose, display, batches, write_model):
+        super(HumanControlledBreakout, self).__init__(verbose, display, batches, write_model)
 
     def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
@@ -327,8 +329,8 @@ class BotControlledBreakout(Breakout):
     """
 
     """ TODO - create state vectors, don't have run draw stuff, give state vectors to learning agent (in another file""" 
-    def __init__(self, agent, verbose, display, batches):
-        super(BotControlledBreakout, self).__init__(verbose, display, batches)
+    def __init__(self, agent, verbose, display, batches, write_model):
+        super(BotControlledBreakout, self).__init__(verbose, display, batches, write_model)
         self.agent = agent
 
     def run(self):
@@ -344,8 +346,8 @@ class OracleControlledBreakout(Breakout):
     The oracle can return any ball - it translates the paddle to 
     match the exact position of the ball at all times
     """
-    def __init__(self, verbose, display, batches):
-        super(OracleControlledBreakout, self).__init__(verbose, display, batches)
+    def __init__(self, verbose, display, batches, write_model):
+        super(OracleControlledBreakout, self).__init__(verbose, display, batches, write_model)
 
     def handle_collisions(self):
         """ 
