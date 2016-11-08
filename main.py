@@ -8,6 +8,8 @@ import argparse
 import src.game_engine as breakout
 import src.agents as agents
 import sys
+import src.function_approximators as fn_approx
+import src.feature_extractors as ft_extract 
 
 
 def main(args, parser):
@@ -20,6 +22,12 @@ def main(args, parser):
         game = breakout.OracleControlledBreakout(args.v, args.d, args.b)
     elif args.p == 'simpleQLearning':
         game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b, args.wr, args.rd)
+    elif args.p == 'linearDiscreteFnApprox':
+        fa = fn_approx.LinearFunctionApproximator()
+        fe = ft_extract.SimpleDiscreteFeatureExtractor()
+        agent = agents.FuncApproxQLearningAgent(fa, fe)
+        game = breakout.BotControlledBreakout(agent, args.v, args.d, args.b, args.wr, args.rd)
+
     game.run()
 
 if __name__ == "__main__":

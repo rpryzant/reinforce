@@ -11,14 +11,16 @@ import random
 from utils import *
 import tensorflow as tf
 import string
-
+from function_approximators import *
+from feature_extractors import *
 
 class Agent(object):
     """Abstract base class for game-playing agents
     """
-    def __init__(self):
+    def __init__(self, epsilon=0.5):
         self.experience = []
         self.numIters = 0  
+        self.epsilon = epsilon                      # exploration prob
         self.Q_values = {}                          # for controlling step size
         self.epsilon = 0.5                          # todo change to 1/n?
         self.experience = {
@@ -62,7 +64,7 @@ class Agent(object):
         return
 
     def getStepSize(self):
-        return 1.0 / math.sqrt(self.numIters)
+        return 1.0 / (math.sqrt(self.numIters) + 1)
 
     def get_prev_state_action(self):
         """retrieve most recently recorded state and action"""
@@ -82,10 +84,9 @@ class DiscreteQLearningAgent(Agent):
     """Simple q learning agent (no function aproximation)
     """
     def __init__(self, gamma=0.99, epsilon=0.9):
-        super(DiscreteQLearningAgent, self).__init__()
+        super(DiscreteQLearningAgent, self).__init__(epsilon)
         self.Q_values = defaultdict(lambda: defaultdict(float))
         self.gamma = gamma          # discount factor
-        self.epsilon = epsilon      # exploration prob
         self.grid_step = 10         # num x, y buckets to discretize on
         self.angle_step = 8         # num angle buckets to discretize on
         self.speed_step = 3         # num ball speeds
@@ -234,21 +235,54 @@ class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, gamma=0.99):
-        super(FuncApproxQLearningAgent, self).__init__()
+    def __init__(self, function_approximator, feature_extractor, gamma=0.99, epsilon=0.9):
+        super(FuncApproxQLearningAgent, self).__init__(epsilon)
+        self.numIters = 0
         self.weights = defaultdict(float)
         self.gamma = gamma
+        self.feature_extractor = feature_extractor
+
+        self.function_approximator = function_approximator
+        self.function_approximator.set_gamma(gamma)
         return
 
-    def processStateAndTakeAction(self, state):
-        def update_Q(self, prev_state, prev_action, reward, newState, opt_action):
-            prediction = self.getQ(prev_state, prev_action)
-            target = reward + self.gamma * self.getQ(newState, opt_action)
-            
-            features = self.featureExtractor(prev_state, prev_action)
-            self.weights = utils.combine(1, self.weights, -(self.getStepSize() * (prediction - target)), features)
+    def processStateAndTakeAction(self, raw_state):
+        def get_opt_action(state):
+            # use function approximator to get opt action
+            actions = [[INPUT_L], [INPUT_R]]
+            return max((self.function_approximator.getQ(state, action), action) for action in actions)[1]
 
-        return
+        def take_action(epsilon, opt_action):
+            # TODO - SAME AS DISCRETE - MOVE TO BASE CLASS?
+            # press space if game has yet to start or if ball is in paddle
+            if self.experience['actions'] == []:
+                return [INPUT_SPACE]
+            elif 'state-'+str(STATE_BALL_IN_PADDLE) in self.experience['states'][-1] and self.experience['states'][-1]['state-'+str(STATE_BALL_IN_PADDLE)] == 1:
+                return [INPUT_SPACE]
+
+            # otherwise take random action with prob epsilon
+            # re-take previous action with probability 2/3
+            elif random.random() < self.epsilon:
+                possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
+                return random.choice(possibleActions)
+
+            # otherwise take optimal action
+            return opt_action
+
+        # get all the info you need to iterate
+        state = self.feature_extractor.extract_features(raw_state)
+        prev_state, prev_action = self.get_prev_state_action()
+        reward = self.feature_extractor.calc_reward(prev_state, state)
+        opt_action = get_opt_action(state)
+
+        # train function approximator on this step, chose e-greedy action
+        self.function_approximator.incorporate_feedback(prev_state, prev_action, reward, state, opt_action, self.getStepSize())
+        e_action = take_action(self.getStepSize(), opt_action)
+
+        # log stuff and return e-greedy action
+        self.log_action(reward, state, e_action)
+        return e_action
+
 
     def getQ(self, state, action):
         score = 0
@@ -267,6 +301,17 @@ class FuncApproxQLearningAgent(Agent):
         file = open(path, 'w')
         file.write(str(self.weights))
         file.close()
+
+
+
+
+
+
+
+
+
+
+
 
 class NeuralNetworkAgent(Agent):
     """Q learning agent that uses function approximation to deal
