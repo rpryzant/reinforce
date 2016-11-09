@@ -189,7 +189,7 @@ class DiscreteQLearningAgent(Agent):
 
             # otherwise take random action with prob epsilon
             # re-take previous action with probability 2/3
-            elif random() < self.epsilon:
+            elif random.random() < self.epsilon:
                 possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
                 return random.choice(possibleActions)
             
