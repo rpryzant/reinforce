@@ -1,5 +1,5 @@
 """
-Breakout
+nnBreakout
 """
 
 import sys
@@ -271,26 +271,6 @@ class Breakout(object):
                 print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
                 print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
                 
-
-    def discretizeLocation(self, x, y):
-        """ 
-        converts continuous coordinates in R^2 to discrete location measurement 
-
-        does so by converting game board to grid of 20x20 pixel squares, then
-          gives the index of the square that (x, y) is in
-        """
-        entries_in_row = SCREEN_SIZE[0] / 20
-        x_grid = x / 10
-        y_grid = y / 10
-        return x_grid + y_grid * (SCREEN_SIZE[0] / 20)
-
-    
-    # TODO - put many of these in utils file
-    def discretizeAngle(self, vec):
-        """ 
-        buckets the continuous angle of a vector into one of 16 discrete angle categories
-        """
-        return int(utils.angle(vec) / 10)
 
     @abc.abstractmethod
     def run(self):

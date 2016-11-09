@@ -13,6 +13,8 @@ import tensorflow as tf
 import string
 from function_approximators import *
 from feature_extractors import *
+import random
+
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -187,7 +189,7 @@ class DiscreteQLearningAgent(Agent):
 
             # otherwise take random action with prob epsilon
             # re-take previous action with probability 2/3
-            elif random.random() < self.epsilon:
+            elif random() < self.epsilon:
                 possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
                 return random.choice(possibleActions)
             
@@ -237,19 +239,22 @@ class FuncApproxQLearningAgent(Agent):
     """
     def __init__(self, function_approximator, feature_extractor, gamma=0.99, epsilon=0.9):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
-        self.numIters = 0
-        self.weights = defaultdict(float)
         self.gamma = gamma
         self.feature_extractor = feature_extractor
 
         self.function_approximator = function_approximator
         self.function_approximator.set_gamma(gamma)
+        self.test = 0
         return
 
     def processStateAndTakeAction(self, raw_state):
         def get_opt_action(state):
             # use function approximator to get opt action
             actions = [[INPUT_L], [INPUT_R]]
+            scores = [(self.function_approximator.getQ(state, action), action) for action in actions]
+            # break ties with random movement
+            if scores[0][0] == scores[1][0]:
+                return random.choice(actions)
             return max((self.function_approximator.getQ(state, action), action) for action in actions)[1]
 
         def take_action(epsilon, opt_action):
@@ -269,37 +274,33 @@ class FuncApproxQLearningAgent(Agent):
             # otherwise take optimal action
             return opt_action
 
+        self.numIters += 1
+
         # get all the info you need to iterate
-        state = self.feature_extractor.extract_features(raw_state)
+        state = self.feature_extractor.process_state(raw_state)
         prev_state, prev_action = self.get_prev_state_action()
         reward = self.feature_extractor.calc_reward(prev_state, state)
-        opt_action = get_opt_action(state)
+        opt_action = get_opt_action(state)                     
+        step_size = self.getStepSize()
 
         # train function approximator on this step, chose e-greedy action
-        self.function_approximator.incorporate_feedback(prev_state, prev_action, reward, state, opt_action, self.getStepSize())
+        self.function_approximator.incorporate_feedback(prev_state, prev_action, reward, state, opt_action, step_size)
         e_action = take_action(self.getStepSize(), opt_action)
 
-        # log stuff and return e-greedy action
         self.log_action(reward, state, e_action)
         return e_action
 
-
-    def getQ(self, state, action):
-        score = 0
-        for f, v in state.items():
-            score += self.weights[f] * v
-        return score
 
     def readModel(self, path):
         w_string = open(path, 'r').read()
         w_string = re.sub("<type '", "", w_string)
         w_string = re.sub("'>", "", w_string)
         w_string = string.replace(w_string, ",)", ")")
-        self.weights = eval(w.string)
+        self.function_approximator.set_weights(eval(w.string))
 
     def writeModel(self, path):
         file = open(path, 'w')
-        file.write(str(self.weights))
+        file.write(str(self.function_approximator.get_weights))
         file.close()
 
 

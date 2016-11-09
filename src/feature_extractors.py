@@ -6,7 +6,7 @@ import abc
 from constants import *
 from collections import defaultdict
 from utils import *
-
+from copy import deepcopy
 
 class FeatureExtractor(object):
     def __init__(self):
@@ -31,9 +31,9 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         self.speed_step = 3         # num ball speeds
         return
 
-    def extract_features(self, raw_state):
-        """simple binary features on state attributes.
-           Same as Discrete binary_phi method
+    def process_state(self, raw_state):
+        """process raw state into representation that the learner can work with.
+           binary features on state attributes -- Same as Discrete binary_phi method
         """
         state = defaultdict(int)
         state['state-'+str(raw_state['game_state'])] = 1
@@ -44,6 +44,20 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         for brick in raw_state['bricks']:
             state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
         return state
+
+    def get_features(self, state, action):
+        # retain binary indicator features as well as
+        #   all pairwise interaction terms
+        out = defaultdict(float)
+        for k, v in state.items():
+            out[k, tuple(action)] = v
+        for k1, v1 in state.items():
+            for k2, v2 in state.items():
+                if 'brick' not in k1 and 'brick' not in k2:
+                    out[k1 + '--' + k2, tuple(action)] = v1 * v2
+
+        return out
+
 
     def calc_reward(self, prev_features, cur_features):
         """calculates reward between binary feature vectors.
@@ -69,10 +83,12 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
                     return -1000.0 - getDistancePaddleBall(cur_features)
 
         # return +3 for each broken brick if we're continuing an ongoing game
-        for key in cur_features.keys():
-            if 'state' in key and prev_features[key]:
-                prev_bricks = sum(1 if 'brick' in key else 0 for key in prev_features.keys())
-                cur_bricks = sum(1 if 'brick' in key else 0 for key in cur_features.keys())
-                return (prev_bricks - cur_bricks) * BROKEN_BRICK_PTS
-        return 0
+        prev_bricks = cur_bricks = 0
+        if 'state-%s' % STATE_PLAYING in cur_features:
+            prev_bricks = sum(1 if 'brick' in key and prev_features[key] == 1 else 0 for key in prev_features.keys())
+            cur_bricks = sum(1 if 'brick' in key and cur_features[key] == 1 else 0 for key in cur_features.keys())
+
+        return (prev_bricks - cur_bricks) * BROKEN_BRICK_PTS
+
+        
 
