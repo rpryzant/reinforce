@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', action="store_true", help="verbose mode")
     parser.add_argument('-d', action="store_true", help="display game")
     parser.add_argument('-b', type=int, default=1, help="num batch iterations (defaults to 1)")
-    parser.add_argument('-wr', type=bool, default=False, help="write model and game stats to file when done")
+    parser.add_argument('-wr', type=bool, default=False, help="write model to file when done")
     parser.add_argument('-rd', type=str, help="read model parameters from file")
     args = parser.parse_args()
     args.func(args, parser)
