@@ -24,7 +24,7 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b, args.wr, args.rd)
     elif args.p == 'linearDiscreteFnApprox':
         fe = ft_extract.SimpleDiscreteFeatureExtractor()
-
+        # give feature extractor ro both agent and function approximator
         fa = fn_approx.LinearFunctionApproximator(fe)
         agent = agents.FuncApproxQLearningAgent(fa, fe)
         game = breakout.BotControlledBreakout(agent, args.v, args.d, args.b, args.wr, args.rd)
@@ -37,11 +37,11 @@ if __name__ == "__main__":
         quit()
     parser = argparse.ArgumentParser(description='Play the game of breakout, or sit back and have a bot play it for you.')
     parser.set_defaults(func=main)
-    parser.add_argument('-p', metavar="type", type=str, help="player type. accepted values: human, baseline, simpleQLearning")
+    parser.add_argument('-p', metavar="type", type=str, help="player type. accepted values: human, baseline, simpleQLearning, linearDiscreteFnApprox")
     parser.add_argument('-v', action="store_true", help="verbose mode")
     parser.add_argument('-d', action="store_true", help="display game")
     parser.add_argument('-b', type=int, default=1, help="num batch iterations (defaults to 1)")
-    parser.add_argument('-wr', type=bool, default=False, help="write model to file when done")
+    parser.add_argument('-wr', type=bool, default=False, help="write model and game stats to file when done")
     parser.add_argument('-rd', type=str, help="read model parameters from file")
     args = parser.parse_args()
     args.func(args, parser)
