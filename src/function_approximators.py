@@ -3,7 +3,7 @@ from collections import defaultdict
 import utils
 from copy import deepcopy
 import random
-
+import constants
 ################################# FEATURE EXTRACTORS ###################################
 
 
@@ -32,6 +32,12 @@ class FunctionApproximator(object):
         """adjust weights"""
         pass
 
+    def actions(self, state):
+        """get appropriate actions for a state. 
+           TODO - return only space if ball is in paddle
+        """
+        return [[constants.INPUT_L], [constants.INPUT_R]]
+
 
 class LinearFunctionApproximator(FunctionApproximator):
     # TODO - NEED INTERACTION TERMS!!!
@@ -49,6 +55,10 @@ class LinearFunctionApproximator(FunctionApproximator):
         return score
 
     def incorporate_feedback(self, prev_state, prev_action, reward, state, opt_action, step_size):
+        # no feedback at very start of game
+        if prev_state == {}:
+            return
+
         features = self.feature_extractor.get_features(prev_state, prev_action)
 
         target = reward + self.gamma * self.getQ(state, opt_action)

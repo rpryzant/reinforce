@@ -8,7 +8,7 @@ import abc
 import math
 import utils
 from constants import *
-
+import copy
 
 class Breakout(object):
     """
@@ -44,7 +44,6 @@ class Breakout(object):
         #pygame.mixer.music.load('static/audio/FUTUREWORLD.mp3')
         #pygame.mixer.music.play(-1)
 
-
         
     def init_game(self):
         """ set game params """
@@ -61,8 +60,8 @@ class Breakout(object):
         self.ball_vel = [5, 5]    # [x, y]
         self.game_over = False
         self.create_bricks()
-        
 
+        
     def create_bricks(self):
         """ creates smashable targets """
         y_ofs = 60
@@ -74,9 +73,11 @@ class Breakout(object):
                 x_ofs += BRICK_WIDTH + 10
             y_ofs += BRICK_HEIGHT + 5
 
+
     def draw_bricks(self):
         for brick in self.bricks:
             pygame.draw.rect(self.screen, BRICK_COLOR, brick)
+
         
     def take_input(self, input):
         """ takes a vector of game inputs and applies them to game objects """
@@ -103,12 +104,14 @@ class Breakout(object):
         elif INPUT_ENTER in input and (self.game_state == STATE_GAME_OVER or self.game_state == STATE_WON):
             self.init_game()
 
+
     def set_paddle_pos(self, x):
         self.paddle.left = x
         if self.paddle.left < 0:
             self.paddle.left = 0
         elif self.paddle.left > MAX_PADDLE_X:
             self.paddle.left = MAX_PADDLE_X
+
 
     def move_ball(self):
         """ applies ball velocity vector to ball """
@@ -211,10 +214,12 @@ class Breakout(object):
             self.show_stats()
             pygame.display.flip()
 
+
     def show_stats(self):
         if self.font:
             font_surface = self.font.render("SCORE: " + str(self.score) + " LIVES: " + str(self.lives) + " BOOSTS: " + str(self.boosts_remaining), False, WHITE)
             self.screen.blit(font_surface, (205,5))
+
 
     def show_message(self,message, x_ofs = 0, y_ofs = 0):
         if self.font:
@@ -241,6 +246,7 @@ class Breakout(object):
             }
         return state
 
+
     def end_game(self):
         """ Gets called when the game ends
             -Used for data collection and batch runs
@@ -248,9 +254,7 @@ class Breakout(object):
         self.game_over = True
 
         if self.verbose:
-            print 'Score : ',self.score
-            print 'Number of frames elapsed : ',self.time
-            print 'Number of bricks left : ', len(self.bricks)
+            print 'score,%s|frames,%s|bricks,%s' % (self.score, self.time, len(self.bricks))
 
         # todo save more stuff for aggregate stats?
         self.experience += [{
@@ -277,9 +281,9 @@ class Breakout(object):
         return
 
 
+
 class HumanControlledBreakout(Breakout):
-    """
-    Breakout subclass which takes inputs from the keyboard during run()
+    """Breakout subclass which takes inputs from the keyboard during run()
     """
     def __init__(self, verbose, display, batches, write_model, model_path):
         super(HumanControlledBreakout, self).__init__(verbose, display, batches, write_model, model_path)
@@ -301,39 +305,61 @@ class HumanControlledBreakout(Breakout):
             self.take_input(self._get_input_from_keyboard())
 
 
+
 class BotControlledBreakout(Breakout):
-    """ 
-    Breakout subclass for agent-controlled games.
+    """Breakout subclass for agent-controlled games.
     
     Whereas HumanControlledBreakout disregaurds game state, BotControlledBreakout gives a vector representation of
        each state (and possibly other stuff) to a game-playing agent, and recieves input (actions) from this agent
     """
-
-    """ TODO - create state vectors, don't have run draw stuff, give state vectors to learning agent (in another file""" 
     def __init__(self, agent, verbose, display, batches, write_model, model_path):
         super(BotControlledBreakout, self).__init__(verbose, display, batches, write_model, model_path)
         self.agent = agent
         if self.model_path is not None:
             self.agent.read_model(self.model_path)
 
+    def calc_reward(self, prev, cur):
+        """calculates the reward between two states
+        """
+        if prev == None:
+            return 0
+
+        def getDistancePaddleBall(state):
+            return abs(state['paddle'].x - state['ball'].x)
+
+        # return +/-1k if game is won/lost, with a little reward for dying closer to the ball
+        if prev['game_state'] != STATE_WON and cur['game_state'] == STATE_WON:
+            return 1000.0
+        elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
+            return -1000.0 - getDistancePaddleBall(cur)
+
+        # return +3 for each broken brick if we're continuing an ongoing game
+        return (len(prev['bricks']) - len(cur['bricks'])) * BROKEN_BRICK_PTS
+
+
     def run(self):
-        while 1:            
+        prev_state = None
+        while 1:
             self.execute_turn()
-            self.take_input(self.agent.processStateAndTakeAction(self.get_state()))
+            cur_state = self.get_state()
+            reward = self.calc_reward(prev_state, cur_state)
+            self.take_input(self.agent.processStateAndTakeAction(cur_state, reward))
+            prev_state = copy.deepcopy(cur_state)
+
 
     def end_game(self):
         super(BotControlledBreakout, self).end_game()
         print self.batches, ' games left'
         if self.batches == 0:
-            # TODO PRINT FINAL SUMMARY STATS FOR BOT IF VERBOSE
             print 'batch run done!'
             if self.write_model:
                 self.agent.write_model('model_params.txt')
             quit()
 
+
+
 class OracleControlledBreakout(Breakout):
-    """ 
-    Breakout subclass for oracle-controlled games.
+    """Breakout subclass for oracle-controlled games.
     
     The oracle can return any ball - it translates the paddle to 
     match the exact position of the ball at all times
@@ -342,8 +368,7 @@ class OracleControlledBreakout(Breakout):
         super(OracleControlledBreakout, self).__init__(verbose, display, batches, write_model)
 
     def handle_collisions(self):
-        """ 
-        overide super.handle_collisions to give oracle more lenient ball-paddle collision conditions
+        """overide super.handle_collisions to give oracle more lenient ball-paddle collision conditions
 
         accounts for the case where ball velocity is so fast it jumps past the paddle in one game turn
         """
@@ -364,7 +389,8 @@ class OracleControlledBreakout(Breakout):
             self.game_state = STATE_WON
             
         if self.ball.colliderect(self.paddle) or \
-                (abs(self.paddle.centerx - self.ball.centerx) < PADDLE_WIDTH * 2 and abs(self.paddle.centery - self.ball.centery) < BALL_DIAMETER):
+                (abs(self.paddle.centerx - self.ball.centerx) < PADDLE_WIDTH * 2 and \
+                     abs(self.paddle.centery - self.ball.centery) < BALL_DIAMETER):
             distance_from_center = float(self.ball.centerx - self.paddle.centerx)
             self.ball.top = PADDLE_Y - BALL_DIAMETER
             self.ball_vel[0] += distance_from_center / 7
@@ -379,7 +405,6 @@ class OracleControlledBreakout(Breakout):
                 self.ball.top  = self.paddle.top - self.ball.height
             else:
                 self.game_state = STATE_GAME_OVER
-
 
     def run(self):
         while 1:

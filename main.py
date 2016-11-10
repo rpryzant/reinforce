@@ -23,10 +23,11 @@ def main(args, parser):
     elif args.p == 'simpleQLearning':
         game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b, args.wr, args.rd)
     elif args.p == 'linearDiscreteFnApprox':
+        # give feature extractor to function approximator
         fe = ft_extract.SimpleDiscreteFeatureExtractor()
-        # give feature extractor ro both agent and function approximator
         fa = fn_approx.LinearFunctionApproximator(fe)
-        agent = agents.FuncApproxQLearningAgent(fa, fe)
+
+        agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.v, args.d, args.b, args.wr, args.rd)
 
     game.run()

@@ -62,3 +62,6 @@ def serializeList(l):
 
 def deserializeAction(a):
     return list(a)
+
+def allSame(l):
+    return all(x == l[0] for x in l)

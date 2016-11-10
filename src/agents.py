@@ -12,7 +12,6 @@ from utils import *
 import tensorflow as tf
 import string
 from function_approximators import *
-from feature_extractors import *
 import random
 
 
@@ -20,7 +19,6 @@ class Agent(object):
     """Abstract base class for game-playing agents
     """
     def __init__(self, epsilon=0.5):
-        self.experience = []
         self.numIters = 0  
         self.epsilon = epsilon                      # exploration prob
         self.Q_values = {}                          # for controlling step size
@@ -32,6 +30,7 @@ class Agent(object):
             'Qs': [],                               # list of dicts
             'weights': []                           # list of sparse vectors
             }
+        self.stats = []                             # for tracking agent performance over time
         return
 
     @abc.abstractmethod
@@ -54,15 +53,6 @@ class Agent(object):
     @abc.abstractmethod
     def writeModel(self, path):
         """Writes model params to `path`"""
-        return
-
-    @abc.abstractmethod
-    def calc_reward(self, state):
-        """look at the predecessor state of newState and
-           calculate whether any rewards transpired between the two.
-           
-           abstract because sub-agents will have different state representations
-        """
         return
 
     def getStepSize(self):
@@ -237,26 +227,31 @@ class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, function_approximator, feature_extractor, gamma=0.99, epsilon=0.9):
+    def __init__(self, function_approximator, gamma=0.99, epsilon=0.9):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
         self.gamma = gamma
-        self.feature_extractor = feature_extractor
 
         self.function_approximator = function_approximator
         self.function_approximator.set_gamma(gamma)
         self.test = 0
         return
 
-    def processStateAndTakeAction(self, raw_state):
-        def get_opt_action(state):
-            # use function approximator to get opt action
-            actions = [[INPUT_L], [INPUT_R]]
-            scores = [(self.function_approximator.getQ(state, action), action) for action in actions]
-            # break ties with random movement
-            if scores[0][0] == scores[1][0]:
-                return random.choice(actions)
-            return max((self.function_approximator.getQ(state, action), action) for action in actions)[1]
+    def actions(self, state):
+        if state['game_state'] == STATE_BALL_IN_PADDLE:
+            return [[INPUT_SPACE]]
+        else:
+            return [[], [INPUT_L], [INPUT_R]]
 
+    def getOptAction(self, state):
+        scores = [(self.function_approximator.getQ(state, action), action) for action in self.actions(state)]
+        # break ties with random movement
+        if utils.allSame([x[0] for x in scores]):
+            return random.choice(scores)[1]
+
+        return max(scores)[1]
+
+
+    def processStateAndTakeAction(self, raw_state, reward):
         def take_action(epsilon, opt_action):
             # TODO - SAME AS DISCRETE - MOVE TO BASE CLASS?
             # press space if game has yet to start or if ball is in paddle
@@ -277,17 +272,15 @@ class FuncApproxQLearningAgent(Agent):
         self.numIters += 1
 
         # get all the info you need to iterate
-        state = self.feature_extractor.process_state(raw_state)
-        prev_state, prev_action = self.get_prev_state_action()
-        reward = self.feature_extractor.calc_reward(prev_state, state)
-        opt_action = get_opt_action(state)                     
+        prev_raw_state, prev_action = self.get_prev_state_action()
+        opt_action = self.getOptAction(raw_state)                     
         step_size = self.getStepSize()
 
         # train function approximator on this step, chose e-greedy action
-        self.function_approximator.incorporate_feedback(prev_state, prev_action, reward, state, opt_action, step_size)
+        self.function_approximator.incorporate_feedback(prev_raw_state, prev_action, reward, raw_state, opt_action, step_size)
         e_action = take_action(self.getStepSize(), opt_action)
 
-        self.log_action(reward, state, e_action)
+        self.log_action(reward, raw_state, e_action)
         return e_action
 
 
