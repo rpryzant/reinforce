@@ -1,0 +1,301 @@
+score,9|frames,312|bricks,51
+149  games left
+score,3|frames,112|bricks,53
+148  games left
+score,6|frames,213|bricks,52
+147  games left
+score,6|frames,212|bricks,52
+146  games left
+score,6|frames,212|bricks,52
+145  games left
+score,3|frames,112|bricks,53
+144  games left
+score,3|frames,112|bricks,53
+143  games left
+score,6|frames,212|bricks,52
+142  games left
+score,9|frames,315|bricks,51
+141  games left
+score,6|frames,212|bricks,52
+140  games left
+score,6|frames,213|bricks,52
+139  games left
+score,3|frames,112|bricks,53
+138  games left
+score,3|frames,112|bricks,53
+137  games left
+score,6|frames,212|bricks,52
+136  games left
+score,3|frames,112|bricks,53
+135  games left
+score,3|frames,112|bricks,53
+134  games left
+score,6|frames,214|bricks,52
+133  games left
+score,6|frames,212|bricks,52
+132  games left
+score,3|frames,112|bricks,53
+131  games left
+score,6|frames,212|bricks,52
+130  games left
+score,3|frames,112|bricks,53
+129  games left
+score,6|frames,213|bricks,52
+128  games left
+score,3|frames,112|bricks,53
+127  games left
+score,6|frames,212|bricks,52
+126  games left
+score,3|frames,112|bricks,53
+125  games left
+score,6|frames,212|bricks,52
+124  games left
+score,3|frames,112|bricks,53
+123  games left
+score,6|frames,212|bricks,52
+122  games left
+score,6|frames,212|bricks,52
+121  games left
+score,9|frames,314|bricks,51
+120  games left
+score,9|frames,218|bricks,51
+119  games left
+score,3|frames,112|bricks,53
+118  games left
+score,3|frames,112|bricks,53
+117  games left
+score,3|frames,112|bricks,53
+116  games left
+score,3|frames,112|bricks,53
+115  games left
+score,3|frames,112|bricks,53
+114  games left
+score,6|frames,212|bricks,52
+113  games left
+score,3|frames,112|bricks,53
+112  games left
+score,6|frames,212|bricks,52
+111  games left
+score,6|frames,212|bricks,52
+110  games left
+score,3|frames,112|bricks,53
+109  games left
+score,6|frames,212|bricks,52
+108  games left
+score,3|frames,112|bricks,53
+107  games left
+score,9|frames,315|bricks,51
+106  games left
+score,3|frames,112|bricks,53
+105  games left
+score,3|frames,112|bricks,53
+104  games left
+score,3|frames,112|bricks,53
+103  games left
+score,6|frames,212|bricks,52
+102  games left
+score,3|frames,112|bricks,53
+101  games left
+score,3|frames,112|bricks,53
+100  games left
+score,6|frames,212|bricks,52
+99  games left
+score,6|frames,212|bricks,52
+98  games left
+score,9|frames,218|bricks,51
+97  games left
+score,6|frames,212|bricks,52
+96  games left
+score,3|frames,112|bricks,53
+95  games left
+score,3|frames,112|bricks,53
+94  games left
+score,3|frames,112|bricks,53
+93  games left
+score,3|frames,112|bricks,53
+92  games left
+score,6|frames,212|bricks,52
+91  games left
+score,6|frames,215|bricks,52
+90  games left
+score,6|frames,212|bricks,52
+89  games left
+score,6|frames,212|bricks,52
+88  games left
+score,3|frames,112|bricks,53
+87  games left
+score,6|frames,212|bricks,52
+86  games left
+score,3|frames,112|bricks,53
+85  games left
+score,6|frames,214|bricks,52
+84  games left
+score,6|frames,212|bricks,52
+83  games left
+score,6|frames,212|bricks,52
+82  games left
+score,3|frames,112|bricks,53
+81  games left
+score,3|frames,112|bricks,53
+80  games left
+score,6|frames,212|bricks,52
+79  games left
+score,3|frames,112|bricks,53
+78  games left
+score,3|frames,112|bricks,53
+77  games left
+score,6|frames,214|bricks,52
+76  games left
+score,3|frames,112|bricks,53
+75  games left
+score,3|frames,112|bricks,53
+74  games left
+score,6|frames,212|bricks,52
+73  games left
+score,3|frames,112|bricks,53
+72  games left
+score,3|frames,112|bricks,53
+71  games left
+score,3|frames,112|bricks,53
+70  games left
+score,6|frames,214|bricks,52
+69  games left
+score,3|frames,112|bricks,53
+68  games left
+score,6|frames,212|bricks,52
+67  games left
+score,6|frames,214|bricks,52
+66  games left
+score,6|frames,212|bricks,52
+65  games left
+score,6|frames,212|bricks,52
+64  games left
+score,3|frames,112|bricks,53
+63  games left
+score,3|frames,112|bricks,53
+62  games left
+score,6|frames,212|bricks,52
+61  games left
+score,6|frames,215|bricks,52
+60  games left
+score,3|frames,112|bricks,53
+59  games left
+score,6|frames,214|bricks,52
+58  games left
+score,12|frames,208|bricks,50
+57  games left
+score,6|frames,212|bricks,52
+56  games left
+score,3|frames,112|bricks,53
+55  games left
+score,6|frames,214|bricks,52
+54  games left
+score,3|frames,112|bricks,53
+53  games left
+score,3|frames,112|bricks,53
+52  games left
+score,3|frames,112|bricks,53
+51  games left
+score,3|frames,112|bricks,53
+50  games left
+score,6|frames,214|bricks,52
+49  games left
+score,6|frames,214|bricks,52
+48  games left
+score,3|frames,112|bricks,53
+47  games left
+score,6|frames,212|bricks,52
+46  games left
+score,6|frames,212|bricks,52
+45  games left
+score,6|frames,215|bricks,52
+44  games left
+score,6|frames,212|bricks,52
+43  games left
+score,3|frames,112|bricks,53
+42  games left
+score,3|frames,112|bricks,53
+41  games left
+score,3|frames,112|bricks,53
+40  games left
+score,9|frames,312|bricks,51
+39  games left
+score,12|frames,208|bricks,50
+38  games left
+score,3|frames,112|bricks,53
+37  games left
+score,9|frames,313|bricks,51
+36  games left
+score,9|frames,312|bricks,51
+35  games left
+score,3|frames,112|bricks,53
+34  games left
+score,3|frames,112|bricks,53
+33  games left
+score,3|frames,112|bricks,53
+32  games left
+score,6|frames,212|bricks,52
+31  games left
+score,6|frames,212|bricks,52
+30  games left
+score,3|frames,112|bricks,53
+29  games left
+score,3|frames,112|bricks,53
+28  games left
+score,3|frames,112|bricks,53
+27  games left
+score,3|frames,112|bricks,53
+26  games left
+score,3|frames,112|bricks,53
+25  games left
+score,6|frames,212|bricks,52
+24  games left
+score,3|frames,112|bricks,53
+23  games left
+score,3|frames,112|bricks,53
+22  games left
+score,3|frames,112|bricks,53
+21  games left
+score,3|frames,112|bricks,53
+20  games left
+score,6|frames,213|bricks,52
+19  games left
+score,6|frames,212|bricks,52
+18  games left
+score,6|frames,212|bricks,52
+17  games left
+score,3|frames,112|bricks,53
+16  games left
+score,9|frames,314|bricks,51
+15  games left
+score,6|frames,212|bricks,52
+14  games left
+score,3|frames,112|bricks,53
+13  games left
+score,6|frames,212|bricks,52
+12  games left
+score,6|frames,212|bricks,52
+11  games left
+score,18|frames,315|bricks,48
+10  games left
+score,3|frames,112|bricks,53
+9  games left
+score,6|frames,212|bricks,52
+8  games left
+score,3|frames,112|bricks,53
+7  games left
+score,6|frames,212|bricks,52
+6  games left
+score,6|frames,212|bricks,52
+5  games left
+score,3|frames,112|bricks,53
+4  games left
+score,3|frames,112|bricks,53
+3  games left
+score,6|frames,212|bricks,52
+2  games left
+score,6|frames,212|bricks,52
+1  games left
+score,6|frames,212|bricks,52
+0  games left
+batch run done!
