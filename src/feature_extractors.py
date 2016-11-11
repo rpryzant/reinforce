@@ -50,9 +50,12 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
             state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
         return state
 
+
     def get_features(self, state, action):
-        # retain binary indicator features as well as
-        #   all pairwise interaction terms
+        """Featurize a raw state vector
+                -retains most discrete binary indicator features from process_state
+                -also throws in some pairwise interaction terms
+        """
         state = self.process_state(state)
 
         out = defaultdict(float)

@@ -108,6 +108,8 @@ class Agent(object):
 
 
 
+
+
 class DiscreteQLearningAgent(Agent):
     """Simple q learning agent (no function aproximation)
     """
@@ -168,7 +170,6 @@ class DiscreteQLearningAgent(Agent):
 
         return e_action
 
-
     def read_model(self, path):
         self.Q_values = super(DiscreteQLearningAgent, self).read_model(path)
 
@@ -176,16 +177,20 @@ class DiscreteQLearningAgent(Agent):
         super(DiscreteQLearningAgent, self).write_model(path, self.Q_values)
 
 
+
+
+
+
 class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, function_approximator, gamma=0.99, epsilon=1.0):
+    def __init__(self, function_approximator, gamma=0.99, epsilon=0.7):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
         self.gamma = gamma
-
-        self.function_approximator = function_approximator
-        self.function_approximator.set_gamma(gamma)
+        self.epsilon = epsilon
+        self.fn_approximator = function_approximator
+        self.fn_approximator.set_gamma(gamma)
         self.test = 0
         return
 
@@ -196,7 +201,7 @@ class FuncApproxQLearningAgent(Agent):
             return [[], [INPUT_L], [INPUT_R]]
 
     def getOptAction(self, state):
-        scores = [(self.function_approximator.getQ(state, action), action) for action in self.actions(state)]
+        scores = [(self.fn_approximator.getQ(state, action), action) for action in self.actions(state)]
         # break ties with random movement
         if utils.allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
@@ -205,45 +210,27 @@ class FuncApproxQLearningAgent(Agent):
 
 
     def processStateAndTakeAction(self, reward, raw_state):
-        def take_action(epsilon, opt_action):
-            # TODO - SAME AS DISCRETE - MOVE TO BASE CLASS?
-            # press space if game has yet to start or if ball is in paddle
-            if self.experience['actions'] == []:
-                return [INPUT_SPACE]
-            elif 'state-'+str(STATE_BALL_IN_PADDLE) in self.experience['states'][-1] and self.experience['states'][-1]['state-'+str(STATE_BALL_IN_PADDLE)] == 1:
-                return [INPUT_SPACE]
-
-            # otherwise take random action with prob epsilon
-            # re-take previous action with probability 2/3
-            elif random.random() < self.epsilon:
-                possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
-                return random.choice(possibleActions)
-
-            # otherwise take optimal action
-            return opt_action
-
         self.numIters += 1
 
         # get all the info you need to iterate
         prev_raw_state, prev_action = self.get_prev_state_action()
         opt_action = self.getOptAction(raw_state)                     
-        step_size = self.getStepSize()
 
         # train function approximator on this step, chose e-greedy action
-        self.function_approximator.incorporate_feedback(prev_raw_state, prev_action, reward, raw_state, opt_action, step_size)
-        e_action = take_action(self.getStepSize(), opt_action)
-
+        self.fn_approximator.incorporate_feedback(prev_raw_state, prev_action, \
+                                                    reward, raw_state, opt_action, self.getStepSize())
+        e_action = self.get_e_action(self.epsilon, opt_action, raw_state)
         self.log_action(reward, raw_state, e_action)
         return e_action
 
 
     def read_model(self, path):
         weights = super(FuncApproxQLearningAgent, self).read_model(path)
-        self.function_approximator.set_weights(weights)
+        self.fn_approximator.set_weights(weights)
 
 
     def write_model(self, path):
-        super(FuncApproxQLearningAgent, self).write_model(path, self.function_approximator.get_weights())
+        super(FuncApproxQLearningAgent, self).write_model(path, self.fn_approximator.get_weights())
 
 
 

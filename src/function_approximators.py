@@ -4,9 +4,6 @@ import utils
 from copy import deepcopy
 import random
 import constants
-################################# FEATURE EXTRACTORS ###################################
-
-
 
 
 class FunctionApproximator(object):
@@ -39,12 +36,15 @@ class FunctionApproximator(object):
         return [[constants.INPUT_L], [constants.INPUT_R]]
 
 
+
+
 class LinearFunctionApproximator(FunctionApproximator):
     # TODO - NEED INTERACTION TERMS!!!
     def __init__(self, feature_extractor):
         super(LinearFunctionApproximator, self).__init__()
         self.feature_extractor = feature_extractor
         return
+
 
     def getQ(self, state, action):
         features = self.feature_extractor.get_features(state, action)
@@ -54,16 +54,14 @@ class LinearFunctionApproximator(FunctionApproximator):
             score += self.weights[f] * v
         return score
 
+
     def incorporate_feedback(self, prev_state, prev_action, reward, state, opt_action, step_size):
         # no feedback at very start of game
         if prev_state == {}:
             return
 
         features = self.feature_extractor.get_features(prev_state, prev_action)
-
         target = reward + self.gamma * self.getQ(state, opt_action)
-
         prediction = self.getQ(prev_state, prev_action)
-
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
 
