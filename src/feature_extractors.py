@@ -23,24 +23,29 @@ class FeatureExtractor(object):
         """
         pass
 
+
 class SimpleDiscreteFeatureExtractor(FeatureExtractor):
     def __init__(self):
         super(SimpleDiscreteFeatureExtractor, self).__init__()
-        self.grid_step = 7         # num x, y buckets to discretize on
-        self.angle_step = 8         # num angle buckets to discretize on
-        self.speed_step = 3         # num ball speeds
         return
-
-    def __process_state(self, raw_state):
+    
+    @staticmethod
+    def process_state(raw_state):
         """process raw state into representation that the learner can work with.
            binary features on state attributes -- Same as Discrete binary_phi method
+
+           static so that agents without a feature extractor can discretize their states
         """
+        grid_step = 7         # num x, y buckets to discretize on
+        angle_step = 8         # num angle buckets to discretize on
+        speed_step = 3         # num ball speeds
+
         state = defaultdict(int)
         state['state-'+str(raw_state['game_state'])] = 1
-        state['ball_x-'+str(int(raw_state['ball'].x) / self.grid_step)] = 1
-        state['ball_y-'+str(int(raw_state['ball'].y) / self.grid_step)] = 1
-        state['paddle_x-'+str(int(raw_state['paddle'].x) / self.grid_step)] = 1
-        state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / self.angle_step ))] = 1
+        state['ball_x-'+str(int(raw_state['ball'].x) / grid_step)] = 1
+        state['ball_y-'+str(int(raw_state['ball'].y) / grid_step)] = 1
+        state['paddle_x-'+str(int(raw_state['paddle'].x) / grid_step)] = 1
+        state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / angle_step ))] = 1
         for brick in raw_state['bricks']:
             state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
         return state
@@ -48,7 +53,7 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
     def get_features(self, state, action):
         # retain binary indicator features as well as
         #   all pairwise interaction terms
-        state = self.__process_state(state)
+        state = self.process_state(state)
 
         out = defaultdict(float)
         for k, v in state.items():

@@ -265,7 +265,9 @@ class Breakout(object):
 
         if self.batches >= 1:
             self.batches -= 1
+            print self.batches, ' games left'
             self.take_input([INPUT_ENTER])
+
         else:
             if self.verbose:
                 n = len(self.experience)
@@ -318,20 +320,17 @@ class BotControlledBreakout(Breakout):
         if self.model_path is not None:
             self.agent.read_model(self.model_path)
 
-    def calc_reward(self, prev, cur):
+    def __calc_reward(self, prev, cur):
         """calculates the reward between two states
         """
         if prev == None:
             return 0
 
-        def getDistancePaddleBall(state):
-            return abs(state['paddle'].x - state['ball'].x)
-
         # return +/-1k if game is won/lost, with a little reward for dying closer to the ball
         if prev['game_state'] != STATE_WON and cur['game_state'] == STATE_WON:
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
-            return -1000.0 - getDistancePaddleBall(cur)
+            return -1000.0 - (abs(cur['paddle'].x - cur['ball'].x))
 
         # return +3 for each broken brick if we're continuing an ongoing game
         return (len(prev['bricks']) - len(cur['bricks'])) * BROKEN_BRICK_PTS
@@ -342,20 +341,15 @@ class BotControlledBreakout(Breakout):
         while 1:
             self.execute_turn()
             cur_state = self.get_state()
-            reward = self.calc_reward(prev_state, cur_state)
-            self.take_input(self.agent.processStateAndTakeAction(cur_state, reward))
+            reward = self.__calc_reward(prev_state, cur_state)
+            self.take_input(self.agent.processStateAndTakeAction(reward, cur_state))
             prev_state = copy.deepcopy(cur_state)
 
 
     def end_game(self):
         super(BotControlledBreakout, self).end_game()
-        print self.batches, ' games left'
-        if self.batches == 0:
-            print 'batch run done!'
-            if self.write_model:
-                self.agent.write_model('model_params.txt')
-            quit()
-
+        if self.batches == 0 and self.write_model:
+            self.agent.write_model('model_params.txt')
 
 
 class OracleControlledBreakout(Breakout):

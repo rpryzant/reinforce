@@ -13,7 +13,7 @@ import tensorflow as tf
 import string
 from function_approximators import *
 import random
-
+from feature_extractors import SimpleDiscreteFeatureExtractor as FeatureExtract
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -65,11 +65,47 @@ class Agent(object):
         else:
             return {}, []
 
+    def get_e_action(self, epsilon, opt_action, raw_state):
+        """given an optimal action and epsilon, returns either
+            1) game-necessitated specialty action (e.g. space) 
+            2) random action (with prob 1 - epsilon)
+            3) opt action (with prob epsilon)
+        """
+        # press space if game has yet to start or if ball is in paddle
+        if self.experience['actions'] == [] or raw_state['game_state'] == STATE_BALL_IN_PADDLE:
+            return [INPUT_SPACE]
+
+        # otherwise take random action with prob epsilon
+        # re-take previous action with probability 2/3
+        elif random.random() < self.epsilon:
+            possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
+            return random.choice(possibleActions)
+
+        # otherwise take optimal action
+        return opt_action
+
+
     def log_action(self, reward, state, e_action):
         """record r, s', a' (not nessicarily optimal) triple"""
         self.experience['rewards'].append(reward)
         self.experience['states'].append(state)
         self.experience['actions'].append(e_action)
+
+
+    def read_model(self, path):
+        model_str = open(path, 'r').read()
+        model_str = re.sub("<type '", "", model_str)
+        model_str = re.sub("'>", "", model_str)
+        model_str = string.replace(model_str, ',)', ')')
+        model_str = re.sub("<function <lambda>[^\,]*", "lambda: defaultdict(float)", model_str)
+        return eval(model_str)
+
+    def write_model(self, path, model):
+        file = open(path, 'w')
+        file.write(str(model))
+        file.close()
+
+
 
 
 class DiscreteQLearningAgent(Agent):
@@ -79,64 +115,13 @@ class DiscreteQLearningAgent(Agent):
         super(DiscreteQLearningAgent, self).__init__(epsilon)
         self.Q_values = defaultdict(lambda: defaultdict(float))
         self.gamma = gamma          # discount factor
+        self.epsilon = epsilon      # randomness factor
         self.grid_step = 10         # num x, y buckets to discretize on
         self.angle_step = 8         # num angle buckets to discretize on
         self.speed_step = 3         # num ball speeds
         return
 
-
-    def calc_reward(self, state):
-        """ compares the current state (param) to previous state (in experience)
-            and calculates corresponding reward
-        """
-        if len(self.experience['states']) == 0:
-            return 0
-
-        def getDistancePaddleBall(state):
-            for key in state.keys():
-                if 'ball_x-' in key:
-                    ball_x = int(key.replace('ball_x-',''))
-                if 'paddle_x-' in key:
-                    paddle_x = int(key.replace('paddle_x-',''))
-            return abs(paddle_x - ball_x) * self.grid_step 
-
-        prev_state = self.experience['states'][-1]
-        # return +/-1k if game is won/lost, with a little reward for dying closer to the ball
-        for key in state.keys():
-            if 'state' in key and not prev_state[key]:
-                if str(STATE_WON) in key:
-                    return 1000.0
-                elif str(STATE_GAME_OVER) in key:
-                    return -1000.0 - getDistancePaddleBall(state)
-
-        # return +3 for each broken brick if we're continuing an ongoing game
-        for key in state.keys():
-            if 'state' in key and prev_state[key]:
-                prev_bricks = sum(1 if 'brick' in key else 0 for key in prev_state.keys())
-                cur_bricks = sum(1 if 'brick' in key else 0 for key in state.keys())
-                return (prev_bricks - cur_bricks) * BROKEN_BRICK_PTS
-        return 0
-
-    def processStateAndTakeAction(self, raw_state):
-        def binary_phi(raw_state):
-            """makes feature vector of binary indicator variables on possible state values
-            """
-            state = defaultdict(int)
-            state['state-'+str(raw_state['game_state'])] = 1
-            state['ball_x-'+str(int(raw_state['ball'].x) / self.grid_step)] = 1
-            state['ball_y-'+str(int(raw_state['ball'].y) / self.grid_step)] = 1
-            state['paddle_x-'+str(int(raw_state['paddle'].x) / self.grid_step)] = 1
-            state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / self.angle_step ))] = 1
-            # Bricks are needed to calculate rewards, but are thrown out during serialization.
-            # This means bricks won't be used for Q-learning which is good (they're a huge 
-            #    explosion on state space), but are still remembered in case we need that info
-            #    for other reasons
-            for brick in raw_state['bricks']:
-                state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
-
-            return state
-
-
+    def processStateAndTakeAction(self, reward, raw_state):
         def get_opt_action(state):
             """gets the optimal action for current state using current Q values
             """ 
@@ -144,10 +129,6 @@ class DiscreteQLearningAgent(Agent):
             max_action = []
             max_value = -float('infinity')
 
-            # TODO -  self.Q_values[serialized_state] is always an empty list. means we haven't 
-            #            explored very well
-            # TODO - no movement ( () ) is always remembered in self.Q_values[serialized_state]
-            #            do we want to allow this?
             for serialized_action in self.Q_values[serialized_state].keys():
                 if self.Q_values[serialized_state][serialized_action] > max_value :
                     max_value = self.Q_values[serialized_state][serialized_action]
@@ -170,28 +151,10 @@ class DiscreteQLearningAgent(Agent):
 
             self.Q_values[serialized_prev_state][serialized_prev_action] = (1 - eta) * prediction + eta * target
 
-        def take_action(epsilon, opt_action):
-            # press space if game has yet to start or if ball is in paddle
-            if self.experience['actions'] == []:
-                return [INPUT_SPACE]
-            elif 'state-'+str(STATE_BALL_IN_PADDLE) in self.experience['states'][-1]:
-                return [INPUT_SPACE]
-
-            # otherwise take random action with prob epsilon
-            # re-take previous action with probability 2/3
-            elif random.random() < self.epsilon:
-                possibleActions = [[INPUT_L], [INPUT_R]] + [ self.experience['actions'][-1] ]
-                return random.choice(possibleActions)
-            
-            # otherwise take optimal action
-            return opt_action
-
         self.numIters += 1
+
         # extract features from state
-        state = binary_phi(raw_state)
-        # compare state to experience and see how much reward 
-        #    the agent recieved from previous to current state
-        reward = self.calc_reward(state)
+        state = FeatureExtract.process_state(raw_state)
         # calculate the optimal action to take given current Q
         opt_action = get_opt_action(state)
         # retrieve prev state and action from experience, then 
@@ -199,35 +162,25 @@ class DiscreteQLearningAgent(Agent):
         prev_state, prev_action = self.get_prev_state_action()
         update_Q(prev_state, prev_action, reward, state, opt_action)
         # select an epsilon-greedy action
-        e_action = take_action(self.getStepSize(), opt_action)
+        e_action = self.get_e_action(self.epsilon, opt_action, raw_state)
         # record everything into experience
         self.log_action(reward, state, e_action)
-        # self.log_experience(reward, state, e_action)
-        # give e-action back to game
+
         return e_action
 
+
     def read_model(self, path):
-        Q_string = open(path, 'r').read()
-        # fiddle with the Q string a little to make it interpretable by python 
-        Q_string = re.sub("<type '", "", Q_string)
-        Q_string = re.sub("'>", "", Q_string)
-        Q_string = string.replace(Q_string, ',)', ')')
-        Q_string = re.sub("<function <lambda>[^\,]*", "lambda: defaultdict(float)", Q_string)
-
-        self.Q_values = eval(Q_string)
-
+        self.Q_values = super(DiscreteQLearningAgent, self).read_model(path)
 
     def write_model(self, path):
-        file = open(path, 'w')
-        file.write(str(self.Q_values))
-        file.close()
+        super(DiscreteQLearningAgent, self).write_model(path, self.Q_values)
 
 
 class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, function_approximator, gamma=0.99, epsilon=0.9):
+    def __init__(self, function_approximator, gamma=0.99, epsilon=1.0):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
         self.gamma = gamma
 
@@ -251,7 +204,7 @@ class FuncApproxQLearningAgent(Agent):
         return max(scores)[1]
 
 
-    def processStateAndTakeAction(self, raw_state, reward):
+    def processStateAndTakeAction(self, reward, raw_state):
         def take_action(epsilon, opt_action):
             # TODO - SAME AS DISCRETE - MOVE TO BASE CLASS?
             # press space if game has yet to start or if ball is in paddle
@@ -284,17 +237,13 @@ class FuncApproxQLearningAgent(Agent):
         return e_action
 
 
-    def readModel(self, path):
-        w_string = open(path, 'r').read()
-        w_string = re.sub("<type '", "", w_string)
-        w_string = re.sub("'>", "", w_string)
-        w_string = string.replace(w_string, ",)", ")")
-        self.function_approximator.set_weights(eval(w.string))
+    def read_model(self, path):
+        weights = super(FuncApproxQLearningAgent, self).read_model(path)
+        self.function_approximator.set_weights(weights)
 
-    def writeModel(self, path):
-        file = open(path, 'w')
-        file.write(str(self.function_approximator.get_weights))
-        file.close()
+
+    def write_model(self, path):
+        super(FuncApproxQLearningAgent, self).write_model(path, self.function_approximator.get_weights())
 
 
 
