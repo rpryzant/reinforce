@@ -123,21 +123,22 @@ class DiscreteQLearningAgent(Agent):
         self.speed_step = 3         # num ball speeds
         return
 
+
+    def get_opt_action(self, state):
+        """gets the optimal action for current state using current Q values
+        """ 
+        serialized_state = serializeBinaryVector(state)
+        max_action = []
+        max_value = -float('infinity')
+
+        for serialized_action in self.Q_values[serialized_state].keys():
+            if self.Q_values[serialized_state][serialized_action] > max_value :
+                max_value = self.Q_values[serialized_state][serialized_action]
+                max_action = deserializeAction(serialized_action)
+        return max_action
+
+
     def processStateAndTakeAction(self, reward, raw_state):
-        def get_opt_action(state):
-            """gets the optimal action for current state using current Q values
-            """ 
-            serialized_state = serializeBinaryVector(state)
-            max_action = []
-            max_value = -float('infinity')
-
-            for serialized_action in self.Q_values[serialized_state].keys():
-                if self.Q_values[serialized_state][serialized_action] > max_value :
-                    max_value = self.Q_values[serialized_state][serialized_action]
-                    max_action = deserializeAction(serialized_action)
-            return max_action
-
-
         def update_Q(prev_state, prev_action, reward, state, opt_action):
             """Update Q towards interpolation between prediction and target
                for expected utility of being in state s and taking action a
@@ -155,10 +156,10 @@ class DiscreteQLearningAgent(Agent):
 
         self.numIters += 1
 
-        # extract features from state
+        # discretize state
         state = FeatureExtract.process_state(raw_state)
         # calculate the optimal action to take given current Q
-        opt_action = get_opt_action(state)
+        opt_action = self.get_opt_action(state)
         # retrieve prev state and action from experience, then 
         #    use all info to update Q
         prev_state, prev_action = self.get_prev_state_action()
@@ -169,6 +170,7 @@ class DiscreteQLearningAgent(Agent):
         self.log_action(reward, state, e_action)
 
         return e_action
+
 
     def read_model(self, path):
         self.Q_values = super(DiscreteQLearningAgent, self).read_model(path)
