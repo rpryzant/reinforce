@@ -190,7 +190,6 @@ class FuncApproxQLearningAgent(Agent):
         self.epsilon = epsilon
         self.fn_approximator = function_approximator
         self.fn_approximator.set_gamma(gamma)
-        self.test = 0
         return
 
     def actions(self, state):
