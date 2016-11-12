@@ -118,9 +118,6 @@ class DiscreteQLearningAgent(Agent):
         self.Q_values = defaultdict(lambda: defaultdict(float))
         self.gamma = gamma          # discount factor
         self.epsilon = epsilon      # randomness factor
-        self.grid_step = 10         # num x, y buckets to discretize on
-        self.angle_step = 8         # num angle buckets to discretize on
-        self.speed_step = 3         # num ball speeds
         return
 
 

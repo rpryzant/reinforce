@@ -39,7 +39,6 @@ class FunctionApproximator(object):
 
 
 class LinearFunctionApproximator(FunctionApproximator):
-    # TODO - NEED INTERACTION TERMS!!!
     def __init__(self, feature_extractor):
         super(LinearFunctionApproximator, self).__init__()
         self.feature_extractor = feature_extractor
