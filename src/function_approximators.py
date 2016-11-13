@@ -33,6 +33,8 @@ class FunctionApproximator(object):
         """get appropriate actions for a state. 
            TODO - return only space if ball is in paddle
         """
+        if self.game_state == STATE_BALL_IN_PADDLE:
+            return [[constants.INPUT_SPACE]]
         return [[constants.INPUT_L], [constants.INPUT_R]]
 
 

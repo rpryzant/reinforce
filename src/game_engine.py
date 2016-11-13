@@ -19,6 +19,7 @@ class Breakout(object):
     """
     def __init__(self, verbose, display, batches, write_model=False, model_path=None):
         self.batches = batches
+        self.totalGames = self.batches
         self.verbose = verbose
         self.display = display
         self.write_model = write_model
@@ -49,6 +50,7 @@ class Breakout(object):
         """ set game params """
         self.lives = 1
         self.score = 0
+        self.gameNum = 1
         self.num_hits = 0
         self.boosts_remaining = 3
         self.boost_time = 0
@@ -100,6 +102,7 @@ class Breakout(object):
 
         if INPUT_QUIT in input:
             self.game_state = STATE_GAME_OVER
+            self.set_paddle_pos(300)
             
         elif INPUT_ENTER in input and (self.game_state == STATE_GAME_OVER or self.game_state == STATE_WON):
             self.init_game()
@@ -217,8 +220,8 @@ class Breakout(object):
 
     def show_stats(self):
         if self.font:
-            font_surface = self.font.render("SCORE: " + str(self.score) + " LIVES: " + str(self.lives) + " BOOSTS: " + str(self.boosts_remaining), False, WHITE)
-            self.screen.blit(font_surface, (205,5))
+            font_surface = self.font.render("GAME: " + str(self.gameNum) + "/" + str(self.totalGames) + " SCORE: " + str(self.score) + " LIVES: " + str(self.lives) + " BOOSTS: " + str(self.boosts_remaining), False, WHITE)
+            self.screen.blit(font_surface, (135,5))
 
 
     def show_message(self,message, x_ofs = 0, y_ofs = 0):
@@ -265,10 +268,12 @@ class Breakout(object):
 
         if self.batches >= 1:
             self.batches -= 1
+            self.gameNum += 1
             print self.batches, ' games left'
             self.take_input([INPUT_ENTER])
 
         else:
+            self.take_input([INPUT_QUIT])
             if self.verbose:
                 n = len(self.experience)
                 print 'Performance summary:'
@@ -280,9 +285,7 @@ class Breakout(object):
 
     @abc.abstractmethod
     def run(self):
-        return
-
-
+        pass
 
 class HumanControlledBreakout(Breakout):
     """Breakout subclass which takes inputs from the keyboard during run()

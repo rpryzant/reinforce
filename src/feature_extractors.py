@@ -36,9 +36,9 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
 
            static so that agents without a feature extractor can discretize their states
         """
-        grid_step = 7         # num x, y buckets to discretize on
-        angle_step = 8         # num angle buckets to discretize on
-        speed_step = 3         # num ball speeds
+        grid_step = GRID_STEP         # num x, y buckets to discretize on
+        angle_step = ANGLE_STEP       # num angle buckets to discretize on
+        speed_step = SPEED_STEP       # num ball speeds
 
         state = defaultdict(int)
         state['state-'+str(raw_state['game_state'])] = 1

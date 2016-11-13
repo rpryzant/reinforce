@@ -1,6 +1,3 @@
-
-
-
 SCREEN_SIZE   = 640,480
 
 # Object dimensions
@@ -41,3 +38,6 @@ INPUT_QUIT = 'Q'
 
 # game constants
 BROKEN_BRICK_PTS = 3
+GRID_STEP = 7
+ANGLE_STEP = 8
+SPEED_STEP = 3
