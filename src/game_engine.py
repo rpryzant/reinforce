@@ -148,7 +148,7 @@ class Breakout(object):
                 else:
                     self.ball_vel[1] = -self.ball_vel[1]
                 self.bricks.remove(brick)
-                self.speed_multiplyer = min(self.speed_multiplyer + 0.05, 1.8)
+                self.speed_multiplyer = min(self.speed_multiplyer + 0.05, MAX_SPEED)
                 break
 
         if len(self.bricks) == 0:

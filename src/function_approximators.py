@@ -4,6 +4,7 @@ import utils
 from copy import deepcopy
 import random
 import constants
+import math
 
 
 class FunctionApproximator(object):
@@ -65,6 +66,9 @@ class LinearFunctionApproximator(FunctionApproximator):
         features = self.feature_extractor.get_features(prev_state, prev_action)
         target = reward + self.gamma * self.getQ(state, opt_action)
         prediction = self.getQ(prev_state, prev_action)
-        print -(step_size * (prediction - target)), step_size, (prediction - target)
+        for w in self.weights.values():
+            if math.isnan(w):
+                raise 
+        # print self.weights
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
 

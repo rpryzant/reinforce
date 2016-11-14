@@ -82,7 +82,13 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
     def process_state(raw_state):
         state = defaultdict(int)
 
-        state['ball-paddle'] = raw_state['ball'].x - raw_state['paddle'].x
+        #state['ball-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0]
+        #state['paddle-x'] = raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]
+        state['ball-paddle-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] -  raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]
+        state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+        state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180
+        #state['ball-vel-y'] = raw_state['ball_vel'][1]
+
 
         return state
 
@@ -92,10 +98,15 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         state = self.process_state(raw_state)
 
         out = defaultdict(float)
+        out['intercept'] = 1
         for k, v in state.items():
             # TODO USE DESERIALIZE!!
             out[k, tuple(action)] = v
 
+        for k1, v1 in state.items():
+            for k2, v2 in state.items():
+                    #out[k1 + '--' + k2, tuple(action)] = v1 * v2
+                    pass
         return out
 
 
