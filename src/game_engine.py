@@ -347,7 +347,8 @@ class BotControlledBreakout(Breakout):
             cur_state = self.get_state()
             reward = self.__calc_reward(prev_state, cur_state)
             self.take_input(self.agent.processStateAndTakeAction(reward, cur_state))
-            prev_state = copy.deepcopy(cur_state)
+            # TODO - better to make copy instead?
+            prev_state = cur_state
 
 
     def end_game(self):

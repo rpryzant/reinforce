@@ -48,8 +48,9 @@ class LinearFunctionApproximator(FunctionApproximator):
         return
 
 
-    def getQ(self, state, action):
-        features = self.feature_extractor.get_features(state, action)
+    def getQ(self, state, action, features=None):
+        if not features:
+            features = self.feature_extractor.get_features(state, action)
 
         score = 0
         for f, v in features.items():
@@ -66,8 +67,6 @@ class LinearFunctionApproximator(FunctionApproximator):
         features = self.feature_extractor.get_features(prev_state, prev_action)
 
         target = reward + self.gamma * self.getQ(state, opt_action)
-        prediction = self.getQ(prev_state, prev_action)
-        for w in self.weights.values():
-            if math.isnan(w):
-                raise 
+        prediction = self.getQ(prev_state, prev_action, features)
+
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)

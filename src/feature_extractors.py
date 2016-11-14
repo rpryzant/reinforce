@@ -46,8 +46,9 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         state['ball_y-'+str(int(raw_state['ball'].y) / grid_step)] = 1
         state['paddle_x-'+str(int(raw_state['paddle'].x) / grid_step)] = 1
         state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / angle_step ))] = 1
-        for brick in raw_state['bricks']:
-            state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
+        # TODO - don't need these for now...took out to save time
+#        for brick in raw_state['bricks']:
+#            state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
         return state
 
 
@@ -59,10 +60,10 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         state = self.process_state(raw_state)
 
         out = defaultdict(float)
-        for k, v in state.items():
+        for k, v in state.iteritems():
             out[k, serializeList(action)] = v
-        for k1, v1 in state.items():
-            for k2, v2 in state.items():
+        for k1, v1 in state.iteritems():
+            for k2, v2 in state.iteritems():
                 if 'brick' not in k1 and 'brick' not in k2:
                     out[k1 + '--' + k2, serializeList(action)] = v1 * v2
 
@@ -97,11 +98,11 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
 
         out = defaultdict(float)
         out['intercept'] = 1
-        for k, v in state.items():
+        for k, v in state.iteritems():
             out[k, serializeList(action)] = v
 
-        for k1, v1 in state.items():
-            for k2, v2 in state.items():
+        for k1, v1 in state.iteritems():
+            for k2, v2 in state.iteritems():
                     #out[k1 + '--' + k2, serializeList(action)] = v1 * v2
                     pass
         return out

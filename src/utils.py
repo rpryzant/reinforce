@@ -30,11 +30,15 @@ def combine(c, x1, d, x2):
     """
     out = x1
     if c == 1:
-        for f, v in x2.items():
+        for f, v in x2.iteritems():
             out[f] = out[f] + d * v
+            if math.isnan(out[f]):
+                raise
     else:
         for f in set(x1.keys()) | set(x2.keys()):
             out[f] = (c * x1[f]) + (d * x2[f])
+            if math.isnan(out[f]):
+                raise
     return out
 
 def discretizeLocation(x, y):
