@@ -57,6 +57,7 @@ class LinearFunctionApproximator(FunctionApproximator):
 
 
     def incorporate_feedback(self, prev_state, prev_action, reward, state, opt_action, step_size):
+
         # no feedback at very start of game
         if prev_state == {}:
             return
@@ -64,5 +65,6 @@ class LinearFunctionApproximator(FunctionApproximator):
         features = self.feature_extractor.get_features(prev_state, prev_action)
         target = reward + self.gamma * self.getQ(state, opt_action)
         prediction = self.getQ(prev_state, prev_action)
+        print -(step_size * (prediction - target)), step_size, (prediction - target)
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
 

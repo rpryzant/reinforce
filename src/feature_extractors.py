@@ -70,3 +70,34 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
 
         return out
 
+
+
+
+class SimpleContinuousFeatureExtractor(FeatureExtractor):
+    def __init__(self):
+        super(SimpleContinuousFeatureExtractor, self).__init__()
+        return
+    
+    @staticmethod
+    def process_state(raw_state):
+        state = defaultdict(int)
+
+        state['ball-paddle'] = raw_state['ball'].x - raw_state['paddle'].x
+
+        return state
+
+
+    def get_features(self, raw_state, action):
+
+        state = self.process_state(raw_state)
+
+        out = defaultdict(float)
+        for k, v in state.items():
+            # TODO USE DESERIALIZE!!
+            out[k, tuple(action)] = v
+
+        return out
+
+
+
+
