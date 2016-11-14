@@ -1,5 +1,6 @@
 import math
 from collections import defaultdict
+import copy
 
 def dotProduct(a, b):
     """ dot product of two vectors """
@@ -27,9 +28,13 @@ def angleBetween(a, b):
 def combine(c, x1, d, x2):
     """linear combination of two sparse vectors: c(x1) + d(x2)
     """
-    out = defaultdict(float)
-    for f in set(x1.keys()) | set(x2.keys()):
-        out[f] = (c * x1[f]) + (d * x2[f])
+    out = x1
+    if c == 1:
+        for f, v in x2.items():
+            out[f] = out[f] + d * v
+    else:
+        for f in set(x1.keys()) | set(x2.keys()):
+            out[f] = (c * x1[f]) + (d * x2[f])
     return out
 
 def discretizeLocation(x, y):

@@ -60,13 +60,11 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
 
         out = defaultdict(float)
         for k, v in state.items():
-            # TODO USE DESERIALIZE!!
-            out[k, tuple(action)] = v
+            out[k, serializeList(action)] = v
         for k1, v1 in state.items():
             for k2, v2 in state.items():
                 if 'brick' not in k1 and 'brick' not in k2:
-                    # TODO USE DESERIALIZE!!
-                    out[k1 + '--' + k2, tuple(action)] = v1 * v2
+                    out[k1 + '--' + k2, serializeList(action)] = v1 * v2
 
         return out
 
@@ -100,12 +98,11 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         out = defaultdict(float)
         out['intercept'] = 1
         for k, v in state.items():
-            # TODO USE DESERIALIZE!!
-            out[k, tuple(action)] = v
+            out[k, serializeList(action)] = v
 
         for k1, v1 in state.items():
             for k2, v2 in state.items():
-                    #out[k1 + '--' + k2, tuple(action)] = v1 * v2
+                    #out[k1 + '--' + k2, serializeList(action)] = v1 * v2
                     pass
         return out
 

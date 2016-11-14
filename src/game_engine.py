@@ -1,7 +1,6 @@
 """
 nnBreakout
 """
-
 import sys
 import pygame
 import abc
@@ -9,6 +8,7 @@ import math
 import utils
 from constants import *
 import copy
+import time
 
 class Breakout(object):
     """
@@ -29,8 +29,9 @@ class Breakout(object):
 
         pygame.init()
 
-        self.screen = pygame.display.set_mode(SCREEN_SIZE)
-        pygame.display.set_caption("Breakout!!")
+        if self.display:
+            self.screen = pygame.display.set_mode(SCREEN_SIZE)
+            pygame.display.set_caption("Breakout!!")
         
         self.clock = pygame.time.Clock()
 
@@ -219,13 +220,13 @@ class Breakout(object):
 
 
     def show_stats(self):
-        if self.font:
+        if self.font and self.display:
             font_surface = self.font.render("GAME: " + str(self.gameNum) + "/" + str(self.totalGames) + " SCORE: " + str(self.score) + " LIVES: " + str(self.lives) + " BOOSTS: " + str(self.boosts_remaining), False, WHITE)
             self.screen.blit(font_surface, (135,5))
 
 
     def show_message(self,message, x_ofs = 0, y_ofs = 0):
-        if self.font:
+        if self.font and self.display:
             size = self.font.size(message)
             font_surface = self.font.render(message,False, WHITE)
             x = ((SCREEN_SIZE[0] - size[0]) / 2) + x_ofs
@@ -281,7 +282,7 @@ class Breakout(object):
                 print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
                 print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
                 print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
-                
+            quit() 
 
     @abc.abstractmethod
     def run(self):

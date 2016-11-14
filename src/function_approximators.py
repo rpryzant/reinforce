@@ -5,7 +5,7 @@ from copy import deepcopy
 import random
 import constants
 import math
-
+import time
 
 class FunctionApproximator(object):
     def __init__(self):
@@ -64,11 +64,10 @@ class LinearFunctionApproximator(FunctionApproximator):
             return
 
         features = self.feature_extractor.get_features(prev_state, prev_action)
+
         target = reward + self.gamma * self.getQ(state, opt_action)
         prediction = self.getQ(prev_state, prev_action)
         for w in self.weights.values():
             if math.isnan(w):
                 raise 
-        # print self.weights
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
-
