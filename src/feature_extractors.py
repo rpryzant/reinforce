@@ -51,19 +51,21 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         return state
 
 
-    def get_features(self, state, action):
+    def get_features(self, raw_state, action):
         """Featurize a raw state vector
                 -retains most discrete binary indicator features from process_state
                 -also throws in some pairwise interaction terms
         """
-        state = self.process_state(state)
+        state = self.process_state(raw_state)
 
         out = defaultdict(float)
         for k, v in state.items():
+            # TODO USE DESERIALIZE!!
             out[k, tuple(action)] = v
         for k1, v1 in state.items():
             for k2, v2 in state.items():
                 if 'brick' not in k1 and 'brick' not in k2:
+                    # TODO USE DESERIALIZE!!
                     out[k1 + '--' + k2, tuple(action)] = v1 * v2
 
         return out
