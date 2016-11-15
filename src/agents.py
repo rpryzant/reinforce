@@ -184,7 +184,7 @@ class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, function_approximator, gamma=0.99, epsilon=0.2):
+    def __init__(self, function_approximator, gamma=0.99, epsilon=0.4):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
         self.gamma = gamma
         self.epsilon = epsilon

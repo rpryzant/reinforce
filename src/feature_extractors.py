@@ -81,12 +81,14 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
     def process_state(raw_state):
         state = defaultdict(int)
 
-        #state['ball-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0]
-        #state['paddle-x'] = raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]
-        state['ball-paddle-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] -  raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]
+        state['ball-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] 
+        state['ball-y'] = raw_state['ball'].y*1.0 / SCREEN_SIZE[1]
+        state['paddle-x'] = raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]
+        state['ball-paddle-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] -  raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+
         state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
         state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180
-        #state['ball-vel-y'] = raw_state['ball_vel'][1]
+        state['ball-vel-y'] = raw_state['ball_vel'][1]*1.0/ SCREEN_SIZE[1]
 
 
         return state
