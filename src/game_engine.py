@@ -357,7 +357,7 @@ class BotControlledBreakout(Breakout):
 
     def end_game(self):
         super(BotControlledBreakout, self).end_game()
-        if self.batches == 0 and self.write_model:
+        if self.batches == 1 and self.write_model:
             self.agent.write_model('model_params.txt')
 
 

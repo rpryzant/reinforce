@@ -39,6 +39,11 @@ def main(args, parser):
 
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+    elif args.p == 'logisticRegression':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fa = fn_approx.LogisticRegression(fe)
+        agent = agents.FuncApproxQLearningAgent(fa)
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     game.run()
 

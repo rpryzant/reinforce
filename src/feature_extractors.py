@@ -77,7 +77,7 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         super(SimpleContinuousFeatureExtractor, self).__init__()
         return
     
-    def process_state(raw_state):
+    def process_state(self, raw_state):
         state = defaultdict(int)
 
         state['ball-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] 
@@ -89,13 +89,30 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180
         state['ball-vel-y'] = raw_state['ball_vel'][1]*1.0/ SCREEN_SIZE[1]
 
-
         return state
 
 
     def get_features(self, raw_state, action):
-
         state = self.process_state(raw_state)
+
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+
+        return out
+
+
+
+class ContinuousFeaturesWithInteractions(SimpleContinuousFeatureExtractor):
+    """ TODO - underflows - not used"""
+    def __init__(self):
+        super(ContinuousFeaturesWithInteractions, self).__init__()
+        return
+
+
+    def get_features(self, raw_state, action):
+        state = super(ContinuousFeaturesWithInteractions, self).process_state(raw_state)
 
         out = defaultdict(float)
         out['intercept'] = 1
@@ -104,8 +121,8 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
 
         for k1, v1 in state.iteritems():
             for k2, v2 in state.iteritems():
-                    #out[k1 + '--' + k2, serializeList(action)] = v1 * v2
-                    pass
+                    out[k1 + '--' + k2, serializeList(action)] = v1 * v2
+        print out
         return out
 
 
