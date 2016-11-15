@@ -77,7 +77,6 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         super(SimpleContinuousFeatureExtractor, self).__init__()
         return
     
-    @staticmethod
     def process_state(raw_state):
         state = defaultdict(int)
 

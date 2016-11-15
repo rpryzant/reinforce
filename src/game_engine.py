@@ -17,9 +17,10 @@ class Breakout(object):
     Implements basically all of the game logic. The only thing that remains
        for subclasses to flesh out is the run() method
     """
-    def __init__(self, verbose, display, batches, write_model=False, model_path=None):
+    def __init__(self, csv, verbose, display, batches, write_model=False, model_path=None):
         self.batches = batches
         self.totalGames = self.batches
+        self.csv = csv
         self.verbose = verbose
         self.display = display
         self.write_model = write_model
@@ -259,6 +260,8 @@ class Breakout(object):
 
         if self.verbose:
             print 'score,%s|frames,%s|bricks,%s' % (self.score, self.time, len(self.bricks))
+        elif self.csv:
+            print "%s,%s,%s" % (self.score, self.time, len(self.bricks))
 
         # todo save more stuff for aggregate stats?
         self.experience += [{
@@ -267,15 +270,16 @@ class Breakout(object):
                 'bricks_remaining': len(self.bricks)
                 }]
 
-        if self.batches >= 1:
+        if self.batches >= 2:
             self.batches -= 1
             self.gameNum += 1
-            print self.batches, ' games left'
+            if not self.csv:
+                print self.batches, ' games left'
             self.take_input([INPUT_ENTER])
 
         else:
             self.take_input([INPUT_QUIT])
-            if self.verbose:
+            if self.verbose or self.csv:
                 n = len(self.experience)
                 print 'Performance summary:'
                 print '\tGames: %s' % n
@@ -291,8 +295,8 @@ class Breakout(object):
 class HumanControlledBreakout(Breakout):
     """Breakout subclass which takes inputs from the keyboard during run()
     """
-    def __init__(self, verbose, display, batches, write_model, model_path):
-        super(HumanControlledBreakout, self).__init__(verbose, display, batches, write_model, model_path)
+    def __init__(self, csv, verbose, display, batches, write_model, model_path):
+        super(HumanControlledBreakout, self).__init__(csv, verbose, display, batches, write_model, model_path)
 
     def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
@@ -318,8 +322,8 @@ class BotControlledBreakout(Breakout):
     Whereas HumanControlledBreakout disregaurds game state, BotControlledBreakout gives a vector representation of
        each state (and possibly other stuff) to a game-playing agent, and recieves input (actions) from this agent
     """
-    def __init__(self, agent, verbose, display, batches, write_model, model_path):
-        super(BotControlledBreakout, self).__init__(verbose, display, batches, write_model, model_path)
+    def __init__(self, agent, csv, verbose, display, batches, write_model, model_path):
+        super(BotControlledBreakout, self).__init__(csv, verbose, display, batches, write_model, model_path)
         self.agent = agent
         if self.model_path is not None:
             self.agent.read_model(self.model_path)
@@ -363,8 +367,8 @@ class OracleControlledBreakout(Breakout):
     The oracle can return any ball - it translates the paddle to 
     match the exact position of the ball at all times
     """
-    def __init__(self, verbose, display, batches, write_model):
-        super(OracleControlledBreakout, self).__init__(verbose, display, batches, write_model)
+    def __init__(self, csv, verbose, display, batches, write_model):
+        super(OracleControlledBreakout, self).__init__(csv, verbose, display, batches, write_model)
 
     def handle_collisions(self):
         """overide super.handle_collisions to give oracle more lenient ball-paddle collision conditions

@@ -10,6 +10,10 @@ def magnitude(a):
     """ magnitude of vector """
     return math.sqrt(dotProduct(a, a))
 
+def distance(a, b):
+    """distance of two points in space"""
+    return math.sqrt(sum((y-x)**2 for x, y in zip(a, b)))
+
 def normalize(vec):
     """ normalize vec to unit vector:  ||vec'|| = 1 """
     return [x * 1.0 / magnitude(vec) for x in vec]

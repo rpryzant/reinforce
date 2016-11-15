@@ -93,17 +93,22 @@ class Agent(object):
 
 
     def read_model(self, path):
+        print 'reading weights from %s...' % path
         model_str = open(path, 'r').read()
         model_str = re.sub("<type '", "", model_str)
         model_str = re.sub("'>", "", model_str)
         model_str = string.replace(model_str, ',)', ')')
         model_str = re.sub("<function <lambda>[^\,]*", "lambda: defaultdict(float)", model_str)
-        return eval(model_str)
+        newWeights = eval(model_str)
+        print "read weights successfully!"
+        return newWeights
 
     def write_model(self, path, model):
+        print 'writing weights...'
         file = open(path, 'w')
         file.write(str(model))
         file.close()
+        print 'weights written!'
 
 
 

@@ -13,29 +13,32 @@ import src.feature_extractors as ft_extract
 
 
 def main(args, parser):
+    if args.csv:
+        print 'score,time,bricks'
+
     game = None
     if args.p == "human":
-        game = breakout.HumanControlledBreakout(args.v, args.d, args.b)
+        game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b)
     elif args.p == "baseline":
-        game = breakout.BotControlledBreakout(agents.Baseline(), args.v, args.d, args.b)
+        game = breakout.BotControlledBreakout(agents.Baseline(), args.csv, args.v, args.d, args.b)
     elif args.p == "oracle":
-        game = breakout.OracleControlledBreakout(args.v, args.d, args.b)
+        game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b)
     elif args.p == 'simpleQLearning':
-        game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.v, args.d, args.b, args.wr, args.rd)
+        game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.csv, args.v, args.d, args.b, args.wr, args.rd)
     elif args.p == 'linearDiscreteFnApprox':
         # give feature extractor to function approximator
         fe = ft_extract.SimpleDiscreteFeatureExtractor()
         fa = fn_approx.LinearFunctionApproximator(fe)
 
         agent = agents.FuncApproxQLearningAgent(fa)
-        game = breakout.BotControlledBreakout(agent, args.v, args.d, args.b, args.wr, args.rd)
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
     elif args.p == 'linearContinuousFnApprox':
         # give feature extractor to function approximator
         fe = ft_extract.SimpleContinuousFeatureExtractor()
         fa = fn_approx.LinearFunctionApproximator(fe)
 
         agent = agents.FuncApproxQLearningAgent(fa)
-        game = breakout.BotControlledBreakout(agent, args.v, args.d, args.b, args.wr, args.rd)
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     game.run()
 
@@ -47,6 +50,7 @@ if __name__ == "__main__":
     parser.set_defaults(func=main)
     parser.add_argument('-p', metavar="type", type=str, help="player type. accepted values: human, baseline, simpleQLearning, linearDiscreteFnApprox, linearContinuousFnApprox")
     parser.add_argument('-v', action="store_true", help="verbose mode")
+    parser.add_argument('-csv', action="store_true", help="csv mode")
     parser.add_argument('-d', action="store_true", help="display game")
     parser.add_argument('-b', type=int, default=1, help="num batch iterations (defaults to 1)")
     parser.add_argument('-wr', type=bool, default=False, help="write model to file when done")
