@@ -42,3 +42,7 @@ BROKEN_BRICK_PTS = 3
 GRID_STEP = 7
 ANGLE_STEP = 8
 SPEED_STEP = 3
+
+
+# experience replay constants
+DEFAULT_REPLAY_CAPACITY = 10000
