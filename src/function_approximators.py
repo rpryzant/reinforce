@@ -122,14 +122,13 @@ class LinearReplayMemory(FunctionApproximator):
 
 
     def getStaticQ(self, state, action, features=None)
+        """TOIDO - documentation, why seperate method form getQ"""
         if not features:
             features = self.feature_extractor.get_features(state, action)
         score = 0
         for f, v in features.items():
             score += self.static_target_weights[f] * v
         return score
-
-
 
     def update_static_target(self):
         """update static target weights to current weights.
@@ -147,17 +146,15 @@ class LinearReplayMemory(FunctionApproximator):
 
         for  i in range(self.replay_sample_size if self.replay_memory.isFull() else 1):
             state, action, reward, newState = self.replay_memory.sample()
-
-
-
-        # no feedback at very start of game
-        if prev_state == {}:
-            return
-
-        features = self.feature_extractor.get_features(prev_state, prev_action)
-        target = reward + self.gamma * self.getQ(state, opt_action)
-        prediction = self.getQ(prev_state, prev_action, features)
-        self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
+            features = self.feature_extractor.get_features(state, action)
+            prediction = self.getQ(state, action, features)
+            if newState == None:
+                target = reward
+            else:
+                target = reward + self.gamma * max(self.getStaticQ(newState, newAction) for newAction in self.actions(newState))
+            # TODO: CLIP UPDATES?
+            # TODO ASSERT WEIGHT BELOW MAX WEIGTH?
+            self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
 
 
 
