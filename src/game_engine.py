@@ -338,9 +338,10 @@ class BotControlledBreakout(Breakout):
         if prev['game_state'] != STATE_WON and cur['game_state'] == STATE_WON:
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
-            return -1000.0 - (abs(cur['paddle'].x - cur['ball'].x))
+            # TODO REMOVED -- encourage agent to 'barely' miss ball?
+            return -1000.0 # - (abs(cur['paddle'].x - cur['ball'].x))
 
-        # return +3 for each broken brick if we're continuing an ongoing game
+        # return difference in points
         return cur['score'] - prev['score'] 
 
 

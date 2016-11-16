@@ -62,10 +62,10 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         out = defaultdict(float)
         for k, v in state.iteritems():
             out[k, serializeList(action)] = v
-        for k1, v1 in state.iteritems():
-            for k2, v2 in state.iteritems():
-                if 'brick' not in k1 and 'brick' not in k2:
-                    out[k1 + '--' + k2, serializeList(action)] = v1 * v2
+        # for k1, v1 in state.iteritems():
+        #     for k2, v2 in state.iteritems():
+        #         if 'brick' not in k1 and 'brick' not in k2:
+        #             out[k1 + '--' + k2, serializeList(action)] = v1 * v2
 
         return out
 
