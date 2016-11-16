@@ -19,31 +19,42 @@ def main(args, parser):
     game = None
     if args.p == "human":
         game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b)
+
     elif args.p == "baseline":
         game = breakout.BotControlledBreakout(agents.Baseline(), args.csv, args.v, args.d, args.b)
+
     elif args.p == "oracle":
         game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b)
+
     elif args.p == 'simpleQLearning':
         game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
     elif args.p == 'linearDiscreteFnApprox':
         # give feature extractor to function approximator
         fe = ft_extract.SimpleDiscreteFeatureExtractor()
         fa = fn_approx.LinearFunctionApproximator(fe)
-
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
     elif args.p == 'linearContinuousFnApprox':
         # give feature extractor to function approximator
         fe = ft_extract.SimpleContinuousFeatureExtractor()
         fa = fn_approx.LinearFunctionApproximator(fe)
-
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
     elif args.p == 'logisticRegression':
         fe = ft_extract.SimpleContinuousFeatureExtractor()
         fa = fn_approx.LogisticRegression(fe)
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
+    elif args.p == 'linearReplayMemory':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fa = fn_approx.LinearReplayMemory(fe, memory_size=5000, replay_sample_size=1, num_static_target_steps=2000)
+        agent = agents.FuncApproxQLearningAgent(fa)
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
 
     game.run()
 

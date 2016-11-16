@@ -25,7 +25,7 @@ class ReplayMemory(object):
             self.throwAwaySample()
 
 
-    def discardSample(self):
+    def throwAwaySample(self):
         bias = 0.9
 
         while True:

@@ -341,7 +341,7 @@ class BotControlledBreakout(Breakout):
             return -1000.0 - (abs(cur['paddle'].x - cur['ball'].x))
 
         # return +3 for each broken brick if we're continuing an ongoing game
-        return (len(prev['bricks']) - len(cur['bricks'])) * BROKEN_BRICK_PTS
+        return cur['score'] - prev['score'] 
 
 
     def run(self):

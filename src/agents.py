@@ -185,69 +185,14 @@ class DiscreteQLearningAgent(Agent):
 
 
 
-class QLearningReplayMemory(Agent):
-    """Q learning agent that uses replay memory, which randomly
-        samples from past experience for each parameter update
-    """
-    def __init__(self, function_approximator, gamma=0.99, epsilon=0.4):
-        super(FuncApproxQLearningAgent, self).__init__(epsilon)
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.fn_approximator = function_approximator
-        self.fn_approximator.set_gamma(gamma)
-        return
-
-    def actions(self, state):
-        if state['game_state'] == STATE_BALL_IN_PADDLE:
-            return [[INPUT_SPACE]]
-        else:
-            return [[], [INPUT_L], [INPUT_R]]
-
-    def getOptAction(self, state):
-        scores = [(self.fn_approximator.getQ(state, action), action) for action in self.actions(state)]
-        # break ties with random movement
-        if utils.allSame([x[0] for x in scores]):
-            return random.choice(scores)[1]
-
-        return max(scores)[1]
-
-
-    def processStateAndTakeAction(self, reward, raw_state):
-        self.numIters += 1
-
-        # get all the info you need to iterate
-        prev_raw_state, prev_action = self.get_prev_state_action()
-        opt_action = self.getOptAction(raw_state)                     
-
-        # train function approximator on this step, chose e-greedy action
-        self.fn_approximator.incorporate_feedback(prev_raw_state, prev_action, \
-                                                    reward, raw_state, opt_action, self.getStepSize())
-        e_action = self.get_e_action(self.epsilon, opt_action, raw_state)
-        self.log_action(reward, raw_state, e_action)
-        return e_action
-
-
-    def read_model(self, path):
-        weights = super(FuncApproxQLearningAgent, self).read_model(path)
-        self.fn_approximator.set_weights(weights)
-
-
-    def write_model(self, path):
-        super(FuncApproxQLearningAgent, self).write_model(path, self.fn_approximator.get_weights())
-
-
-
-
-
-
-
-
-
 
 
 class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
+
+       TODO - take actions on current state (the "prev_state thing")? That's the way
+            its supposed to be done....
     """
     def __init__(self, function_approximator, gamma=0.99, epsilon=0.4):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
