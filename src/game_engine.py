@@ -142,7 +142,7 @@ class Breakout(object):
         """ logic for collision between ball and game object """
         for brick in self.bricks:
             if self.ball.colliderect(brick):
-                self.score += 3
+                self.score += BROKEN_BRICK_PTS
                 self.num_hits += 1
                 if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\
                      or (brick.x +BRICK_WIDTH < self.ball.x - self.ball_vel[0] * self.speed_multiplyer):
@@ -377,7 +377,7 @@ class OracleControlledBreakout(Breakout):
         """
         for brick in self.bricks:
             if self.ball.colliderect(brick):
-                self.score += 3
+                self.score += BROKEN_BRICK_PTS
                 self.num_hits += 1
                 if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\
                      or (brick.x +BRICK_WIDTH < self.ball.x - self.ball_vel[0] * self.speed_multiplyer):
