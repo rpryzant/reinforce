@@ -100,3 +100,66 @@ class LogisticRegression(FunctionApproximator):
 
 
 
+class LinearReplayMemory(FunctionApproximator):
+    def __init__(self, feature_extractor,  memory_size, replay_sample_size,
+                    num_static_target_steps):
+        super(LinearFunctionApproximator, self).__init__()
+        self.feature_extractor = feature_extractor
+        self.replay_memory = ReplayMemory(memory_size)
+        self.num_static_target_steps = num_static_target_steps
+        self.iterations = 0
+        self.static_target_weights = copy.deepcopy(self.weights)
+        self.replay_sample_size = replay_sample_size
+        return
+
+    def getQ(self, state, action, features=None):
+        if not features:
+            features = self.feature_extractor.get_features(state, action)
+        score = 0
+        for f, v in features.items():
+            score += self.weights[f] * v
+        return score
+
+
+    def getStaticQ(self, state, action, features=None)
+        if not features:
+            features = self.feature_extractor.get_features(state, action)
+        score = 0
+        for f, v in features.items():
+            score += self.static_target_weights[f] * v
+        return score
+
+
+
+    def update_static_target(self):
+        """update static target weights to current weights.
+            This is done to make updates more stable
+        """
+        self.static_target_weights = copy.deepcopy(self.weights)
+
+
+    def incorporate_feedback(self, prev_state, prev_action, reward, state, opt_action, step_size):
+        self.iterations += 1
+        if self.iterations % self.num_static_target_steps == 0:
+            self.update_static_target()
+
+        self.replay_memory.store((prev_state, prev_action, reward, state))
+
+        for  i in range(self.replay_sample_size if self.replay_memory.isFull() else 1):
+            state, action, reward, newState = self.replay_memory.sample()
+
+
+
+        # no feedback at very start of game
+        if prev_state == {}:
+            return
+
+        features = self.feature_extractor.get_features(prev_state, prev_action)
+        target = reward + self.gamma * self.getQ(state, opt_action)
+        prediction = self.getQ(prev_state, prev_action, features)
+        self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
+
+
+
+
+
