@@ -123,7 +123,7 @@ class LinearReplayMemory(FunctionApproximator):
 
 
     def getStaticQ(self, state, action, features=None):
-        """TOIDO - documentation, why seperate method form getQ"""
+        """TO DO - documentation, why seperate method form getQ"""
         if not features:
             features = self.feature_extractor.get_features(state, action)
         score = 0

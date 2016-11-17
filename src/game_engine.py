@@ -49,11 +49,11 @@ class Breakout(object):
         #pygame.mixer.music.play(-1)
 
         
-    def init_game(self):
+    def init_game(self, numnum = 1):
         """ set game params """
         self.lives = 1
         self.score = 0
-        self.gameNum = 1
+        self.gameNum = numnum
         self.num_hits = 0
         self.boosts_remaining = 3
         self.boost_time = 0
@@ -112,7 +112,7 @@ class Breakout(object):
             self.set_paddle_pos(300)
             
         elif INPUT_ENTER in input and (self.game_state == STATE_GAME_OVER or self.game_state == STATE_WON):
-            self.init_game()
+            self.init_game(self.gameNum)
 
 
     def set_paddle_pos(self, x):
@@ -125,8 +125,10 @@ class Breakout(object):
 
     def move_ball(self):
         """ applies ball velocity vector to ball """
-        self.ball.x += self.ball_vel[0] * self.speed_multiplyer
-        self.ball.y -= self.ball_vel[1] * self.speed_multiplyer    # pygame treats "up" as decreasing y axis
+        self.ball_vel[0] = 5*self.ball_vel[0]/ (self.ball_vel[0]**2 + self.ball_vel[1]**2)**0.5
+        self.ball_vel[1] = 5*self.ball_vel[1]/ (self.ball_vel[0]**2 + self.ball_vel[1]**2)**0.5
+        self.ball.x += self.ball_vel[0] * self.speed_multiplyer 
+        self.ball.y -= self.ball_vel[1] * self.speed_multiplyer   # pygame treats "up" as decreasing y axis
 
         if self.ball.left <= 0:
             self.ball.left = 0
@@ -278,6 +280,7 @@ class Breakout(object):
         if self.batches >= 2:
             self.batches -= 1
             self.gameNum += 1
+
             if not self.csv:
                 print self.batches, ' games left'
             self.take_input([INPUT_ENTER])
@@ -300,8 +303,8 @@ class Breakout(object):
 class HumanControlledBreakout(Breakout):
     """Breakout subclass which takes inputs from the keyboard during run()
     """
-    def __init__(self, csv, verbose, display, batches, write_model, model_path):
-        super(HumanControlledBreakout, self).__init__(csv, verbose, display, batches, write_model, model_path)
+    def __init__(self, csv, verbose, display, batches):#, write_model, model_path):
+        super(HumanControlledBreakout, self).__init__(csv, verbose, display, batches)#, write_model, model_path)
 
     def _get_input_from_keyboard(self):
         keys = pygame.key.get_pressed()
@@ -344,7 +347,7 @@ class BotControlledBreakout(Breakout):
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
             # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -1000.0  # - (abs(cur['paddle'].x - cur['ball'].x))
+            return -10.0  # - (abs(cur['paddle'].x - cur['ball'].x))
 
         # return difference in points
         return cur['score'] - prev['score'] 
@@ -373,8 +376,8 @@ class OracleControlledBreakout(Breakout):
     The oracle can return any ball - it translates the paddle to 
     match the exact position of the ball at all times
     """
-    def __init__(self, csv, verbose, display, batches, write_model):
-        super(OracleControlledBreakout, self).__init__(csv, verbose, display, batches, write_model)
+    def __init__(self, csv, verbose, display, batches):#, write_model):
+        super(OracleControlledBreakout, self).__init__(csv, verbose, display, batches)#, write_model)
 
     def handle_collisions(self):
         """overide super.handle_collisions to give oracle more lenient ball-paddle collision conditions
