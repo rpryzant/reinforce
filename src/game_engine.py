@@ -20,7 +20,6 @@ class Breakout(object):
     """
     def __init__(self, csv, verbose, display, batches, write_model=False, model_path=None):
         self.batches = batches
-        self.totalGames = self.batches
         self.csv = csv
         self.verbose = verbose
         self.display = display
@@ -53,7 +52,6 @@ class Breakout(object):
         """ set game params """
         self.lives = 1
         self.score = 0
-        self.gameNum = 1
         self.num_hits = 0
         self.boosts_remaining = 3
         self.boost_time = 0
@@ -227,7 +225,7 @@ class Breakout(object):
 
     def show_stats(self):
         if self.font and self.display:
-            font_surface = self.font.render("GAME: " + str(self.gameNum) + "/" + str(self.totalGames) + " SCORE: " + str(self.score) + " LIVES: " + str(self.lives) + " BOOSTS: " + str(self.boosts_remaining), False, WHITE)
+            font_surface = self.font.render("SCORE: " + str(self.score) + " LIVES: " + str(self.lives) + " BOOSTS: " + str(self.boosts_remaining), False, WHITE)
             self.screen.blit(font_surface, (135,5))
 
 
@@ -275,27 +273,46 @@ class Breakout(object):
                 'bricks_remaining': len(self.bricks)
                 }]
 
-        if self.batches >= 2:
-            self.batches -= 1
-            self.gameNum += 1
-            if not self.csv:
-                print self.batches, ' games left'
-            self.take_input([INPUT_ENTER])
 
-        else:
-            self.take_input([INPUT_QUIT])
-            if self.verbose or self.csv:
-                n = len(self.experience)
-                print 'Performance summary:'
-                print '\tGames: %s' % n
-                print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
-                print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
-                print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
+        self.take_input([INPUT_QUIT])
+        if self.verbose or self.csv:
+            n = len(self.experience)
+            print 'Performance summary:'
+            print '\tGames: %s' % n
+            print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
+            print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
+            print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
             quit() 
 
     @abc.abstractmethod
     def run(self):
         pass
+
+    def __calc_reward(self, prev, cur):
+        """calculates the reward between two states
+        """
+        if prev == None:
+            return 0
+
+        # return +/-1k if game is won/lost, with a little reward for dying closer to the ball
+        if prev['game_state'] != STATE_WON and cur['game_state'] == STATE_WON:
+            return 1000.0
+        elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
+            # TODO REMOVED -- encourage agent to 'barely' miss ball?
+            return -1000.0  # - (abs(cur['paddle'].x - cur['ball'].x))
+
+        # return difference in points
+        return cur['score'] - prev['score'] 
+
+
+    def executeAction(self, action):
+        """executes a game turn based on the given action"""
+        prev_state = self.get_state()
+        self.take_input(action)
+        self.execute_turn()
+        new_state = self.get_state()
+        reward = self.__calc_reward(prev_state, new_state)
+        return reward, new_state
 
 class HumanControlledBreakout(Breakout):
     """Breakout subclass which takes inputs from the keyboard during run()
@@ -333,38 +350,34 @@ class BotControlledBreakout(Breakout):
         if self.model_path is not None:
             self.agent.read_model(self.model_path)
 
-    def __calc_reward(self, prev, cur):
-        """calculates the reward between two states
-        """
-        if prev == None:
-            return 0
-
-        # return +/-1k if game is won/lost, with a little reward for dying closer to the ball
-        if prev['game_state'] != STATE_WON and cur['game_state'] == STATE_WON:
-            return 1000.0
-        elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
-            # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -1000.0  # - (abs(cur['paddle'].x - cur['ball'].x))
-
-        # return difference in points
-        return cur['score'] - prev['score'] 
-
 
     def run(self):
-        prev_state = None
-        while 1:
-            self.execute_turn()
-            cur_state = self.get_state()
-            reward = self.__calc_reward(prev_state, cur_state)
-            self.take_input(self.agent.processStateAndTakeAction(reward, cur_state))
-            # TODO - better to make copy instead?
-            prev_state = cur_state
+        for episode in xrange(self.batches):
 
+            new_action = None
+            prev_state = None
+            state = self.get_state()
+            while state['game_state'] != STATE_GAME_OVER:
+                if new_action is None:
+                    action = self.agent.takeAction(state)
+                else:
+                    action = new_action
+                reward, new_state = self.executeAction(action)
+                new_action = self.agent.incorporateFeedback(state, action, reward, new_state)
+                state = new_state
+
+            self.take_input([INPUT_ENTER])    
+            if not self.csv:
+                print 'episode %s complete.' % episode
 
     def end_game(self):
         super(BotControlledBreakout, self).end_game()
         if self.batches == 1 and self.write_model:
             self.agent.write_model('model_params.txt')
+
+
+
+
 
 
 class OracleControlledBreakout(Breakout):
@@ -416,12 +429,13 @@ class OracleControlledBreakout(Breakout):
                 self.game_state = STATE_GAME_OVER
 
     def run(self):
-        while 1:
-            self.set_paddle_pos(self.ball.left - 35)
-            self.execute_turn()
-            if self.game_state == STATE_BALL_IN_PADDLE:
-                self.take_input([INPUT_SPACE])
-
+        for episode in range(self.batches):
+            while 1:
+                self.set_paddle_pos(self.ball.left - 35)
+                self.execute_turn()
+                if self.game_state == STATE_BALL_IN_PADDLE:
+                    self.take_input([INPUT_SPACE])
+            self.take_input([INPUT_SPACE])
 
 
 if __name__ == "__main__":

@@ -14,6 +14,151 @@ import string
 from function_approximators import *
 import random
 from feature_extractors import SimpleDiscreteFeatureExtractor as FeatureExtract
+from replay_memory import ReplayMemory
+import copy
+
+class BaseAgent(object):
+    """abstract base class for all agents
+    """
+    def getAction(self, state):
+        raise NotImplementedError("Override me")
+
+    def incorporateFedback(self, state, action, reward, newState):
+        raise NotImplementedError("override me")
+
+class RLAgent(BaseAgent):
+    """base class for RL agents taht approximate the value function.
+    """
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+        self.featureExtractor = featureExtractor
+        self.explorationProb = epsilon
+        self.discount = gamma
+        self.stepSize = stepSize
+        self.numIters = 1
+        self.weights = defaultdict(float)
+
+    def getQ(self, state, action, features=None):
+        """ returns Q-value for s,a pair
+        """
+        if not features:
+            features = self.featureExtractor.get_features(state, action)
+        score = 0
+        for f, v in features.items():
+            score += self.weights[f] * v
+        return score
+
+
+    def actions(self, state):
+        """returns set of possible actions from a state
+        """
+        if state['game_state'] == STATE_BALL_IN_PADDLE:
+            return [[INPUT_SPACE]]
+        else:
+            return [[], [INPUT_L], [INPUT_R]]
+
+
+    def takeAction(self, state):
+        """ returns action according to e-greedy policy
+        """
+        self.numIters += 1
+
+        actions = self.actions(state)
+
+        if random.random() < self.explorationProb:
+            return random.choice(actions)
+
+        scores = [(self.getQ(state, action), action) for action in actions]
+        # break ties with random movement
+        if utils.allSame([x[0] for x in scores]):
+            return random.choice(scores)[1]
+
+        return max(scores)[1]
+
+    def getStepSize(self):
+        return self.stepSize
+
+    def copyWeights(self):
+        return copy.deepcopy(self.weights)
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        raise NotImplementedError("override this")
+
+
+class QLearning(RLAgent):
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+        super(QLearning, self).__init__(featureExtractor, epsilon, gamma, stepSize)
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        # TODO LEAVE TARGET AT REWARD IF END OF GAME
+        # no feedback at very start of game
+        if state == {}:
+            return
+
+        prediction = self.getQ(state, action)
+
+        target = reward
+        if newState['game_state'] != STATE_GAME_OVER:
+            target += self.discount * max(self.getQ(newState, action) for action in self.actions(newState))
+
+        update = self.stepSize * (prediction - target)
+        # clip gradient - TODO EXPORT TO UTILS?
+        update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+
+        for f, v in self.featureExtractor.get_features(state, action).iteritems():
+            self.weights[f] = self.weights[f] - update * v
+        return None
+
+
+
+class QLearningReplayMemory(RLAgent):
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, 
+        num_static_target_steps=2500, memory_size=100000, replay_sample_size=1):
+        super(QLearningReplayMemory, self).__init__(featureExtractor, epsilon, gamma, stepSize)
+        self.num_static_target_steps = num_static_target_steps
+        self.memory_size = memory_size
+        self.sample_size = replay_sample_size
+        self.replay_memory = ReplayMemory(memory_size)
+        self.static_target_weights = self.copyWeights()
+
+    def getStaticQ(self, state, action, features=None):
+        if not features:
+            features = self.featureExtractor.get_features(state, action)
+        score = 0
+        for f, v in features.items():
+            score += self.static_target_weights[f] * v
+        return score
+
+    def update_static_target(self):
+        """update static target weights to current weights.
+            This is done to make updates more stable
+        """
+        self.static_target_weights = self.copyWeights()
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        # TODO LEAVE TARGET AT REWARD IF END OF GAME
+        if state == {}:
+            return
+
+        if self.numIters % self.num_static_target_steps == 0:
+            self.update_static_target()
+
+        self.replay_memory.store((state, action, reward, newState))
+
+        for i in range(self.sample_size if self.replay_memory.isFull() else 1):
+            state, action, reward, newState = self.replay_memory.sample()
+            prediction = self.getQ(state, action)
+
+            target = reward 
+            if newState['game_state'] != STATE_GAME_OVER:
+                target += self.discount * max(self.getStaticQ(newState, newAction) for newAction in self.actions(newState))
+
+            update = self.stepSize * (prediction - target)
+            # clip gradient - TODO EXPORT TO UTILS?
+            update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+            for f, v in self.featureExtractor.get_features(state, action).iteritems():
+                self.weights[f] = self.weights[f] - update * v
+        return None
+
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -83,6 +228,26 @@ class Agent(object):
 
         # otherwise take optimal action
         return opt_action
+
+    def actions(self, state):
+        if state['game_state'] == STATE_BALL_IN_PADDLE:
+            return [[INPUT_SPACE]]
+        else:
+            return [[], [INPUT_L], [INPUT_R]]
+
+
+    def takeAction(self, state):
+        opt_action = self.get_opt_action(state)
+
+        actions = self.actions(state)
+
+        if random.random() < self.epsilon:
+            return random.choice(actions)
+        else:
+            return opt_action
+
+        # TODO ADJUST EPSILON?
+        return self.get_e_action(self.epsilon, opt_action, state)
 
 
     def log_action(self, reward, state, e_action):
@@ -202,27 +367,28 @@ class FuncApproxQLearningAgent(Agent):
         self.fn_approximator.set_gamma(gamma)
         return
 
-    def actions(self, state):
-        if state['game_state'] == STATE_BALL_IN_PADDLE:
-            return [[INPUT_SPACE]]
-        else:
-            return [[], [INPUT_L], [INPUT_R]]
 
-    def getOptAction(self, state):
+    def get_opt_action(self, state):
         scores = [(self.fn_approximator.getQ(state, action), action) for action in self.actions(state)]
         # break ties with random movement
         if utils.allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
-
         return max(scores)[1]
 
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        optNewAction = self.get_opt_action(newState)
+        self.fn_approximator.incorporate_feedback(state, action, reward, \
+                            newState, optNewAction, self.getStepSize())
+        # off-policy so return None
+        return None
 
     def processStateAndTakeAction(self, reward, raw_state):
         self.numIters += 1
 
         # get all the info you need to iterate
         prev_raw_state, prev_action = self.get_prev_state_action()
-        opt_action = self.getOptAction(raw_state)                     
+        opt_action = self.get_opt_action(raw_state)                     
 
         # train function approximator on this step, chose e-greedy action
         self.fn_approximator.incorporate_feedback(prev_raw_state, prev_action, \
@@ -245,46 +411,6 @@ class FuncApproxQLearningAgent(Agent):
 
 
 
-
-
-
-
-
-class NeuralNetworkAgent(Agent):
-    """Q learning agent that uses function approximation to deal
-       with continuous states
-    """
-    def __init__(self, gamma=0.99):
-        super(NeuralNetworkAgent, self).__init__()
-        self.weights = defaultdict(float)
-        w_in = tf.Variable(tf.random_normal([14, 32], stddev=0.1),
-                      name="weights_input")
-        w_h1 = tf.Variable(tf.random_normal([32, 64], stddev=0.1),
-                      name="weights_hidden1")
-        w_h2 = tf.Variable(tf.random_normal([64, 32], stddev=0.1),
-                      name="weights_hidden2")
-        w_o = tf.Variable(tf.random_normal([32, 2], stddev=0.1),
-                      name="weights_output")
-        self.weights = {'W_in':w_in, 'W_h1': w_h1, 'W_h2': w_h2, 'W_o': w_o}
-        X = tf.placeholder("float", [1,14])
-        y = tf.placeholder("float", [2,1])
-        self.neuralNetwork = model(X, w_in, w_h1, w_h2, w_o)
-        cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(pred, y))
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
-        self.gamma = gamma
-        return
-
-    def model(X, w_in, w_h1, w_h2, w_o):
-      layer1 = tf.relu(tf.matmul(X,w_in))
-      layer2 = tf.relu(tf.matmul(layer1,w_h1))
-      layer3 = tf.relu(tf.matmul(layer2,w_h2))
-      output_layer = tf.matmul(layer3, w_o)
-      return output_layer
-
-    def processStateAndTakeAction(self, state):
-        def update_Q(self, prev_state, prev_action, reward, newState, opt_action):
-          pass
-     
 
 class Baseline(Agent):
     """dumb agent that always follows the ball"""

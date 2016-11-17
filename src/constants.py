@@ -46,3 +46,6 @@ SPEED_STEP = 3
 
 # experience replay constants
 DEFAULT_REPLAY_CAPACITY = 10000
+
+# Learning constants
+MAX_GRADIENT = 5
