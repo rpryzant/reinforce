@@ -196,9 +196,14 @@ class DiscreteQLearningAgent(Agent):
                 return True
         return False
 
+
+
 class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
+
+       TODO - take actions on current state (the "prev_state thing")? That's the way
+            its supposed to be done....
     """
     def __init__(self, function_approximator, gamma=0.99, epsilon=0.0):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
@@ -257,7 +262,6 @@ class FuncApproxQLearningAgent(Agent):
         if utils.magnitude(differences) != 0 and utils.magnitude(differences) < 1e-6:
             return True
         return False
-
 
 class NeuralNetworkAgent(Agent):
     """Q learning agent that uses function approximation to deal

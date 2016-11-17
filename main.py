@@ -29,14 +29,12 @@ def main(args, parser):
         # give feature extractor to function approximator
         fe = ft_extract.SimpleDiscreteFeatureExtractor()
         fa = fn_approx.LinearFunctionApproximator(fe)
-
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.c, args.wr, args.rd)
     elif args.p == 'linearContinuousFnApprox':
         # give feature extractor to function approximator
         fe = ft_extract.SimpleContinuousFeatureExtractor()
         fa = fn_approx.LinearFunctionApproximator(fe)
-
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.c, args.wr, args.rd)
     elif args.p == 'logisticRegression':
@@ -44,6 +42,13 @@ def main(args, parser):
         fa = fn_approx.LogisticRegression(fe)
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.c, args.wr, args.rd)
+
+    elif args.p == 'linearReplayMemory':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fa = fn_approx.LinearReplayMemory(fe, memory_size=5000, replay_sample_size=1, num_static_target_steps=2000)
+        agent = agents.FuncApproxQLearningAgent(fa)
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
 
     game.run()
 

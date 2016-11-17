@@ -1,11 +1,12 @@
 """File containing all the fancy schmancy function approximators"""
 from collections import defaultdict
 import utils
-from copy import deepcopy
+import copy
 import random
 import constants
 import math
 import time
+from replay_memory import ReplayMemory
 
 class FunctionApproximator(object):
     def __init__(self):
@@ -24,7 +25,7 @@ class FunctionApproximator(object):
         return deepcopy(self.old_weights)
         
     def get_weights(self):
-        return deepcopy(self.weights)
+        return copy.deepcopy(self.weights)
 
     def getQ(self, state, action):
         """forward pass of model"""
@@ -36,10 +37,8 @@ class FunctionApproximator(object):
 
     def actions(self, state):
         """get appropriate actions for a state. 
-           TODO - return only space if ball is in paddle
+           TODO - not really used....clean up
         """
-        if self.game_state == STATE_BALL_IN_PADDLE:
-            return [[constants.INPUT_SPACE]]
         return [[constants.INPUT_L], [constants.INPUT_R]]
 
 
@@ -72,6 +71,8 @@ class LinearFunctionApproximator(FunctionApproximator):
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
 
 
+
+
 class LogisticRegression(FunctionApproximator):
     def __init__(self, feature_extractor):
         super(LogisticRegression, self).__init__()
@@ -100,6 +101,70 @@ class LogisticRegression(FunctionApproximator):
         target = reward + self.gamma * self.getQ(state, opt_action)
         prediction = self.getQ(prev_state, prev_action, features)
         self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
+
+
+
+
+class LinearReplayMemory(FunctionApproximator):
+    def __init__(self, feature_extractor,  memory_size, replay_sample_size,
+                    num_static_target_steps):
+        super(LinearReplayMemory, self).__init__()
+        self.feature_extractor = feature_extractor
+        self.replay_memory = ReplayMemory(memory_size)
+        self.num_static_target_steps = num_static_target_steps
+        self.iterations = 0
+        self.static_target_weights = self.get_weights()
+        self.replay_sample_size = replay_sample_size
+        return
+
+    def getQ(self, state, action, features=None):
+        if not features:
+            features = self.feature_extractor.get_features(state, action)
+        score = 0
+        for f, v in features.items():
+            score += self.weights[f] * v
+        return score
+
+
+    def getStaticQ(self, state, action, features=None):
+        """TOIDO - documentation, why seperate method form getQ"""
+        if not features:
+            features = self.feature_extractor.get_features(state, action)
+        score = 0
+        for f, v in features.items():
+            score += self.static_target_weights[f] * v
+        return score
+
+    def update_static_target(self):
+        """update static target weights to current weights.
+            This is done to make updates more stable
+        """
+        self.static_target_weights = self.get_weights()
+
+
+    def incorporate_feedback(self, prev_state, prev_action, reward, state, opt_action, step_size):
+        self.iterations += 1
+        # no feedback at very start of game
+        if prev_state == {}:
+            return
+
+        if self.iterations % self.num_static_target_steps == 0:
+            self.update_static_target()
+
+        self.replay_memory.store((prev_state, prev_action, reward, state))
+
+        for  i in range(self.replay_sample_size if self.replay_memory.isFull() else 1):
+            state, action, reward, newState = self.replay_memory.sample()
+            features = self.feature_extractor.get_features(state, action)
+            prediction = self.getQ(state, action, features)
+            if newState == None:
+                target = reward
+            else:
+                target = reward + self.gamma * max(self.getStaticQ(newState, newAction) for newAction in self.actions(newState))
+            # TODO: CLIP UPDATES?
+            # TODO ASSERT WEIGHT BELOW MAX WEIGTH?
+            self.weights = utils.combine(1, self.weights, -(step_size * (prediction - target)), features)
+
 
 
 
