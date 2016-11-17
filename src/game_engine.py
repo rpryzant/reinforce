@@ -9,6 +9,7 @@ import utils
 from constants import *
 import copy
 import time
+import random
 
 class Breakout(object):
     """
@@ -98,7 +99,11 @@ class Breakout(object):
             self.boost_time += 25
 
         if INPUT_SPACE in input and self.game_state == STATE_BALL_IN_PADDLE:
-            self.ball_vel = [5,5]
+            angle_initial = ((random.random()-0.5)*90)/180*3.14
+            initial_y_vel = 5*math.cos(angle_initial)
+            initial_x_vel = 5*math.sin(angle_initial)
+            self.ball_vel = [initial_x_vel, initial_y_vel]
+            # self.ball_vel = [5,5]
             self.speed_multiplyer = 1.0
             self.game_state = STATE_PLAYING
 
@@ -339,7 +344,7 @@ class BotControlledBreakout(Breakout):
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
             # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -1000.0 # - (abs(cur['paddle'].x - cur['ball'].x))
+            return -1000.0  # - (abs(cur['paddle'].x - cur['ball'].x))
 
         # return difference in points
         return cur['score'] - prev['score'] 
@@ -386,7 +391,7 @@ class OracleControlledBreakout(Breakout):
                 else:
                     self.ball_vel[1] = -self.ball_vel[1]
                 self.bricks.remove(brick)
-                self.speed_multiplyer = min(self.speed_multiplyer + 0.05, 1.8)
+                self.speed_multiplyer = min(self.speed_multiplyer + 0.05, MAX_SPEED)
                 break
 
         if len(self.bricks) == 0:

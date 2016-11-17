@@ -82,7 +82,7 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
 
         state['ball-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] 
         state['ball-y'] = raw_state['ball'].y*1.0 / SCREEN_SIZE[1]
-        state['paddle-x'] = raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]
+        state['paddle-x'] = raw_state['paddle'].x*1.0 / SCREEN_SIZE[0] 
         state['ball-paddle-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] -  raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
 
         state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
