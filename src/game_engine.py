@@ -17,8 +17,9 @@ class Breakout(object):
     Implements basically all of the game logic. The only thing that remains
        for subclasses to flesh out is the run() method
     """
-    def __init__(self, csv, verbose, display, batches, write_model=False, model_path=None):
+    def __init__(self, csv, verbose, display, batches, convergence = False, write_model=False, model_path=None):
         self.batches = batches
+        self.check_convergence = convergence
         self.totalGames = self.batches
         self.csv = csv
         self.verbose = verbose
@@ -270,13 +271,18 @@ class Breakout(object):
                 'bricks_remaining': len(self.bricks)
                 }]
 
-        if self.batches >= 2:
+
+        if self.batches >= 2 and self.check_convergence:
             self.batches -= 1
             self.gameNum += 1
             if not self.csv:
                 print self.batches, ' games left'
             self.take_input([INPUT_ENTER])
-
+        elif self.check_convergence:
+            self.gameNum += 1
+            if not self.csv:
+                print self.batches, ' games left'
+            self.take_input([INPUT_ENTER])
         else:
             self.take_input([INPUT_QUIT])
             if self.verbose or self.csv:
@@ -322,9 +328,10 @@ class BotControlledBreakout(Breakout):
     Whereas HumanControlledBreakout disregaurds game state, BotControlledBreakout gives a vector representation of
        each state (and possibly other stuff) to a game-playing agent, and recieves input (actions) from this agent
     """
-    def __init__(self, agent, csv, verbose, display, batches, write_model, model_path):
+    def __init__(self, agent, csv, verbose, display, batches, convergence, write_model, model_path):
         super(BotControlledBreakout, self).__init__(csv, verbose, display, batches, write_model, model_path)
         self.agent = agent
+        self.check_convergence = convergence
         if self.model_path is not None:
             self.agent.read_model(self.model_path)
 
@@ -353,6 +360,10 @@ class BotControlledBreakout(Breakout):
             self.take_input(self.agent.processStateAndTakeAction(reward, cur_state))
             # TODO - better to make copy instead?
             prev_state = cur_state
+            # if self.check_convergence:
+            #     if (self.agent.has_converged()):
+            #         self.check_convergence = False
+            #         self.end_game()
 
 
     def end_game(self):

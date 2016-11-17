@@ -14,6 +14,7 @@ import string
 from function_approximators import *
 import random
 from feature_extractors import SimpleDiscreteFeatureExtractor as FeatureExtract
+from copy import deepcopy
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -21,6 +22,7 @@ class Agent(object):
     def __init__(self, epsilon=0.5):
         self.numIters = 0  
         self.epsilon = epsilon                      # exploration prob
+        self.prev_Q_values = {}
         self.Q_values = {}                          # for controlling step size
         self.epsilon = 0.5                          # todo change to 1/n?
         self.experience = {
@@ -110,9 +112,10 @@ class Agent(object):
         file.close()
         print 'weights written!'
 
-
-
-
+    @abc.abstractmethod
+    def has_converged(self):
+        """Checks if agent has converged updates"""
+        return
 
 
 class DiscreteQLearningAgent(Agent):
@@ -165,6 +168,7 @@ class DiscreteQLearningAgent(Agent):
         # retrieve prev state and action from experience, then 
         #    use all info to update Q
         prev_state, prev_action = self.get_prev_state_action()
+        self.old_Q_values = copy.deepcopy(self.Q_values)
         update_Q(prev_state, prev_action, reward, state, opt_action)
         # select an epsilon-greedy action
         e_action = self.get_e_action(self.epsilon, opt_action, raw_state)
@@ -180,16 +184,23 @@ class DiscreteQLearningAgent(Agent):
     def write_model(self, path):
         super(DiscreteQLearningAgent, self).write_model(path, self.Q_values)
 
-
-
-
-
+    def has_converged(self):
+        if len(self.old_Q_values) != len(self.Q_values):
+            return False
+        if len(self.Q_values) > 0:
+            differences = []
+            for k, v in self.Q_values.iteritems():
+                for x, y in v.iteritems():
+                    differences.append(y - self.old_Q_values[k][x])
+            if utils.magnitude(differences) != 0 and utils.magnitude(differences) < 1e-6:
+                return True
+        return False
 
 class FuncApproxQLearningAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, function_approximator, gamma=0.99, epsilon=0.4):
+    def __init__(self, function_approximator, gamma=0.99, epsilon=0.0):
         super(FuncApproxQLearningAgent, self).__init__(epsilon)
         self.gamma = gamma
         self.epsilon = epsilon
@@ -235,15 +246,17 @@ class FuncApproxQLearningAgent(Agent):
     def write_model(self, path):
         super(FuncApproxQLearningAgent, self).write_model(path, self.fn_approximator.get_weights())
 
-
-
-
-
-
-
-
-
-
+    def has_converged(self):
+        old_weights = self.fn_approximator.get_old_weights()
+        weights = self.fn_approximator.get_weights()
+        if len(weights) != len(old_weights):
+            return False
+        differences = []
+        for k, v in weights.iteritems():
+            differences.append(v - old_weights[k])
+        if utils.magnitude(differences) != 0 and utils.magnitude(differences) < 1e-6:
+            return True
+        return False
 
 
 class NeuralNetworkAgent(Agent):

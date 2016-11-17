@@ -9,6 +9,7 @@ import time
 
 class FunctionApproximator(object):
     def __init__(self):
+        self.old_weights = defaultdict(float)
         self.weights = defaultdict(float)
         self.gamma = None
         return
@@ -19,6 +20,9 @@ class FunctionApproximator(object):
     def set_weights(self, w):
         self.weights = w
 
+    def get_old_weights(self):
+        return deepcopy(self.old_weights)
+        
     def get_weights(self):
         return deepcopy(self.weights)
 
