@@ -70,6 +70,7 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         return out
 
 
+
 class SanityCheckFeatures(FeatureExtractor):
     def __init__(self):
         super(SanityCheckFeatures, self).__init__()

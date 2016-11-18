@@ -304,7 +304,6 @@ class Breakout(object):
         # return difference in points
         return cur['score'] - prev['score'] 
 
-
     def executeAction(self, action):
         """executes a game turn based on the given action"""
         prev_state = self.get_state()
@@ -313,6 +312,9 @@ class Breakout(object):
         new_state = self.get_state()
         reward = self.__calc_reward(prev_state, new_state)
         return reward, new_state
+
+
+
 
 class HumanControlledBreakout(Breakout):
     """Breakout subclass which takes inputs from the keyboard during run()
@@ -335,6 +337,8 @@ class HumanControlledBreakout(Breakout):
         while 1:            
             self.execute_turn()
             self.take_input(self._get_input_from_keyboard())
+
+
 
 
 
@@ -369,12 +373,14 @@ class BotControlledBreakout(Breakout):
             self.take_input([INPUT_ENTER])    
             if not self.csv:
                 print 'episode %s complete.' % episode
+        if self.write_model is not None:
+            self.agent.write_model(self.write_model)
+
 
     def end_game(self):
         super(BotControlledBreakout, self).end_game()
         if self.batches == 1 and self.write_model:
             self.agent.write_model('model_params.txt')
-
 
 
 
