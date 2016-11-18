@@ -71,6 +71,48 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
 
 
 
+class SanityCheckFeatures(FeatureExtractor):
+    def __init__(self):
+        super(SanityCheckFeatures, self).__init__()
+        return
+    
+    @staticmethod
+    def process_state(raw_state):
+        """process raw state into representation that the learner can work with.
+           binary features on state attributes -- Same as Discrete binary_phi method
+
+           static so that agents without a feature extractor can discretize their states
+        """
+        state = defaultdict(int)
+        if raw_state['ball'].centerx < raw_state['paddle'].centerx:
+            state['left'] = 1
+            state['right'] = 0
+        else:
+            state['left'] = 0
+            state['right'] = 1
+        return state
+
+
+    def get_features(self, raw_state, action):
+        """Featurize a raw state vector
+                -retains most discrete binary indicator features from process_state
+                -also throws in some pairwise interaction terms
+        """
+        state = self.process_state(raw_state)
+
+        out = defaultdict(float)
+        for k, v in state.iteritems():
+             out[k] = v
+        # for k1, v1 in state.iteritems():
+        #     for k2, v2 in state.iteritems():
+        #         if 'brick' not in k1 and 'brick' not in k2:
+        #             out[k1 + '--' + k2, serializeList(action)] = v1 * v2
+
+        return out
+
+
+
+
 
 class SimpleContinuousFeatureExtractor(FeatureExtractor):
     def __init__(self):
@@ -83,7 +125,7 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         state['ball-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] 
         state['ball-y'] = raw_state['ball'].y*1.0 / SCREEN_SIZE[1]
         state['paddle-x'] = raw_state['paddle'].x*1.0 / SCREEN_SIZE[0] 
-        state['ball-paddle-x'] = raw_state['ball'].x*1.0 / SCREEN_SIZE[0] -  raw_state['paddle'].x*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+        state['ball-paddle-x'] = raw_state['ball'].centerx*1.0 / SCREEN_SIZE[0] -  raw_state['paddle'].centerx*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
 
         state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
         state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180

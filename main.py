@@ -18,42 +18,42 @@ def main(args, parser):
 
     game = None
     if args.p == "human":
-        game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b)
+        game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == "baseline":
-        game = breakout.BotControlledBreakout(agents.Baseline(), args.csv, args.v, args.d, args.b)
+        # TODO FIX
+        return 
 
     elif args.p == "oracle":
-        game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b)
+        # TODO FIX
+        return
 
     elif args.p == 'simpleQLearning':
-        game = breakout.BotControlledBreakout(agents.DiscreteQLearningAgent(), args.csv, args.v, args.d, args.b, args.wr, args.rd)
+        # TODO FIX
+        return
 
-    elif args.p == 'linearDiscreteFnApprox':
-        # give feature extractor to function approximator
-        fe = ft_extract.SimpleDiscreteFeatureExtractor()
-        fa = fn_approx.LinearFunctionApproximator(fe)
-        agent = agents.FuncApproxQLearningAgent(fa)
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
-    elif args.p == 'linearContinuousFnApprox':
-        # give feature extractor to function approximator
+    elif args.p == 'linearQ':
         fe = ft_extract.SimpleContinuousFeatureExtractor()
-        fa = fn_approx.LinearFunctionApproximator(fe)
-        agent = agents.FuncApproxQLearningAgent(fa)
+        agent = agents.QLearning(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
-    elif args.p == 'logisticRegression':
+    elif args.p == 'linearReplayQ':
         fe = ft_extract.SimpleContinuousFeatureExtractor()
-        fa = fn_approx.LogisticRegression(fe)
-        agent = agents.FuncApproxQLearningAgent(fa)
+        agent = agents.QLearningReplayMemory(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
-    elif args.p == 'linearReplayMemory':
+    ############################################################################
+    # # # # # # # # # test bed for experimental features # # # # # # # # # # # #
+    ############################################################################    
+    elif args.p == 'test':
+#        fe = ft_extract.SanityCheckFeatures()
         fe = ft_extract.SimpleContinuousFeatureExtractor()
-        fa = fn_approx.LinearReplayMemory(fe, memory_size=5000, replay_sample_size=1, num_static_target_steps=2000)
-        agent = agents.FuncApproxQLearningAgent(fa)
+#        fa = fn_approx.LinearReplayMemory(fe, memory_size=5000, replay_sample_size=1, num_static_target_steps=2000)
+#        fa = fn_approx.LinearFunctionApproximator(fe)
+        agent = agents.QLearningReplayMemory(fe)
+#        agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
 
 
     game.run()
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('-csv', action="store_true", help="csv mode")
     parser.add_argument('-d', action="store_true", help="display game")
     parser.add_argument('-b', type=int, default=1, help="num batch iterations (defaults to 1)")
-    parser.add_argument('-wr', type=bool, default=False, help="write model to file when done")
+    parser.add_argument('-wr', type=str, help="write model to file when done")
     parser.add_argument('-rd', type=str, help="read model parameters from file")
     args = parser.parse_args()
     args.func(args, parser)
