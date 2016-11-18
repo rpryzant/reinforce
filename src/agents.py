@@ -150,6 +150,7 @@ class QLearningReplayMemory(RLAgent):
         self.replay_memory = ReplayMemory(memory_size)
         self.static_target_weights = self.copyWeights()
 
+
     def getStaticQ(self, state, action, features=None):
         if not features:
             features = self.featureExtractor.get_features(state, action)
@@ -158,11 +159,13 @@ class QLearningReplayMemory(RLAgent):
             score += self.static_target_weights[f] * v
         return score
 
+
     def update_static_target(self):
         """update static target weights to current weights.
             This is done to make updates more stable
         """
         self.static_target_weights = self.copyWeights()
+
 
     def incorporateFeedback(self, state, action, reward, newState):
         # TODO LEAVE TARGET AT REWARD IF END OF GAME
