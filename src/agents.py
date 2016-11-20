@@ -112,11 +112,14 @@ class RLAgent(BaseAgent):
 
 
 class QLearning(RLAgent):
+    """Implementation of the Q-Learning algorithm
+    """
     def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
         super(QLearning, self).__init__(featureExtractor, epsilon, gamma, stepSize)
 
     def incorporateFeedback(self, state, action, reward, newState):
-        # TODO LEAVE TARGET AT REWARD IF END OF GAME
+        """Train on one SARS' tuple
+        """
         # no feedback at very start of game
         if state == {}:
             return
@@ -133,6 +136,7 @@ class QLearning(RLAgent):
 
         for f, v in self.featureExtractor.get_features(state, action).iteritems():
             self.weights[f] = self.weights[f] - update * v
+        # return None to denote that this is an off-policy algorithm
         return None
 
 
@@ -141,6 +145,9 @@ class QLearning(RLAgent):
 
 
 class QLearningReplayMemory(RLAgent):
+    """Implementation of Q-learing with replay memory, which updates model parameters
+        towards a random sample of past experiences 
+    """
     def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, 
         num_static_target_steps=2500, memory_size=100000, replay_sample_size=1):
         super(QLearningReplayMemory, self).__init__(featureExtractor, epsilon, gamma, stepSize)
@@ -152,6 +159,11 @@ class QLearningReplayMemory(RLAgent):
 
 
     def getStaticQ(self, state, action, features=None):
+        """Get the Q-value for a state-action pair using 
+            a frozen set of auxiliary weights. This could be accomplished with a flag on
+            getQ, but we want to make it extremely clear what's going on here
+        """
+
         if not features:
             features = self.featureExtractor.get_features(state, action)
         score = 0
@@ -168,10 +180,12 @@ class QLearningReplayMemory(RLAgent):
 
 
     def incorporateFeedback(self, state, action, reward, newState):
+        """Perform a Q-learning update
+        """
         # TODO LEAVE TARGET AT REWARD IF END OF GAME
         if state == {}:
             return
-
+        # update the auxiliary weights to the current weights every num_static_target_steps iterations
         if self.numIters % self.num_static_target_steps == 0:
             self.update_static_target()
 
@@ -183,6 +197,7 @@ class QLearningReplayMemory(RLAgent):
 
             target = reward 
             if newState['game_state'] != STATE_GAME_OVER:
+                # Use the static auxiliary weights as your target
                 target += self.discount * max(self.getStaticQ(newState, newAction) for newAction in self.actions(newState))
 
             update = self.stepSize * (prediction - target)

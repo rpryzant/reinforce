@@ -25,8 +25,7 @@ def main(args, parser):
         return 
 
     elif args.p == "oracle":
-        # TODO FIX
-        return
+        game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b, args.wr)
 
     elif args.p == 'simpleQLearning':
         # TODO FIX

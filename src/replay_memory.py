@@ -3,7 +3,9 @@ import constants
 
 
 class ReplayMemory(object):
-    """TODO - DOCUMENTATION"""
+    """replay memory of agent experience. allows agents to 
+        make use of experience replay
+    """
     def __init__(self, capacity=constants.DEFAULT_REPLAY_CAPACITY):
         self.experience = {}
         self.start_i = 0
@@ -12,9 +14,11 @@ class ReplayMemory(object):
 
 
     def size(self):
+        """size of replay memory buffer"""
         return self.end_i + 1 - self.start_i
 
     def isFull(self):
+        """is the replay memory at capacity?"""
         return self.size() >= self.capacity
 
     def store(self, sars):
@@ -22,18 +26,19 @@ class ReplayMemory(object):
         self.end_i += 1
         self.experience[self.end_i] = sars
         if self.isFull():
-            self.throwAwaySample()
+            self.dropSample()
 
-
-    def throwAwaySample(self):
+    def dropSample(self):
+        """Removes a random experience tuple from the replay memory
+            The memory is biased against throwing away SARS' tuples with
+            nonzero reward. This helps the agent hold on to its most informative records
+        """
         bias = 0.9
 
         while True:
             del_index = random.randint(self.start_i, self.end_i)
             del_sars = self.experience[del_index]
             if abs(del_sars[2]) > 0 and random.random() < bias:
-                # bias memory against throwing away sars' tuples with
-                #    nonzero reward (try to hold on to the informative tuples)
                 continue
             del self.experience[del_index]
             if del_index == self.start_i:
@@ -47,6 +52,8 @@ class ReplayMemory(object):
 
 
     def sample(self):
+        """Sample an experience tuple
+        """
         if self.end_i == -1:
             return
         if not self.isFull():
