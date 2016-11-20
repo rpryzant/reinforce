@@ -32,8 +32,8 @@ def main(args, parser):
         game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b, args.wr)
 
     elif args.p == 'simpleQLearning':
-        # TODO FIX
-        return
+        agent = agents.DiscreteQLearning()
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearQ':
         fe = ft_extract.SimpleContinuousFeatureExtractor()

@@ -13,7 +13,7 @@ import tensorflow as tf
 import string
 from function_approximators import *
 import random
-from feature_extractors import SimpleDiscreteFeatureExtractor as FeatureExtract
+from feature_extractors import SimpleDiscreteFeatureExtractor as DiscreteFeaturizer
 from replay_memory import ReplayMemory
 import copy
 
@@ -216,47 +216,54 @@ class QLearningReplayMemory(RLAgent):
 ####################################################################################
 
 
-class DiscreteQLearningAgent(BaseAgent):
-    """TODO  - FINISH FIXING
+class DiscreteQLearning(BaseAgent):
+    """TODO  - VERIFY CORRECTNESS
     """
-    def __init__(self, gamma=0.99, epsilon=0.9):
+    def __init__(self, gamma=0.99, epsilon=0.9, stepSize=0.001):
         self.Q_values = defaultdict(lambda: defaultdict(float))
         self.gamma = gamma          # discount factor
         self.epsilon = epsilon      # randomness factor
+        self.stepSize = stepSize    # step size
         self.numIters = 1
         return
 
-    def actions(self, state):
-        pass
 
     def takeAction(self, state):
         """ returns action according to e-greedy policy
         """
         self.numIters += 1
         actions = self.actions(state)
-        if random.random() < self.explorationProb:
+        if random.random() < self.epsilon:
             return random.choice(actions)
-        scores = [(self.getQ(state, action), action) for action in actions]
+
+        state = DiscreteFeaturizer.process_state(state)
+        state = serializeBinaryVector(state)
+
+        scores = [(self.Q_values[state][serializeList(action)], action) for action in actions]
         # break ties with random movement
         if utils.allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
         return max(scores)[1]
 
 
-    def takeAction(self, state):
-        opt_action = self.get_opt_action(state)
+    def incorporateFeedback(self, state, action, reward, newState):
+        """Update Q towards interpolation between prediction and target
+            for expected utility of being in state s and taking action a
+        """
+        state = DiscreteFeaturizer.process_state(state)
+        newState = DiscreteFeaturizer.process_state(newState)
 
-        actions = self.actions(state)
+        serialized_state = serializeBinaryVector(state)
+        serialized_action = serializeList(action)
+        serialized_newSate = serializeBinaryVector(newState)
+        serialized_opt_action = serializeList(self.get_opt_action(newState))
 
-        if random.random() < self.epsilon:
-            return random.choice(actions)
-        else:
-            return opt_action
+        prediction = self.Q_values[serialized_state][serialized_action]
+        target = reward + self.gamma * self.Q_values[serialized_newSate][serialized_opt_action]
+        self.Q_values[serialized_state][serialized_action] = (1 - self.stepSize) * prediction + self.stepSize * target
 
-        # TODO ADJUST EPSILON?
-        return self.get_e_action(self.epsilon, opt_action, state)
-
-
+        # return None to signify this is an off-policy algorithm
+        return None
 
     def get_opt_action(self, state):
         """gets the optimal action for current state using current Q values
@@ -270,40 +277,6 @@ class DiscreteQLearningAgent(BaseAgent):
                 max_value = self.Q_values[serialized_state][serialized_action]
                 max_action = deserializeAction(serialized_action)
         return max_action
-
-
-    def processStateAndTakeAction(self, reward, raw_state):
-        def update_Q(prev_state, prev_action, reward, state, opt_action):
-            """Update Q towards interpolation between prediction and target
-               for expected utility of being in state s and taking action a
-            """
-            serialized_prev_state = serializeBinaryVector(prev_state)
-            serialized_state = serializeBinaryVector(state)
-            serialized_prev_action = serializeList(prev_action)
-            serialized_opt_action = serializeList(opt_action)
-            eta = self.getStepSize()
-
-            prediction = self.Q_values[serialized_prev_state][serialized_prev_action]
-            target = reward + self.gamma * self.Q_values[serialized_state][serialized_opt_action]
-
-            self.Q_values[serialized_prev_state][serialized_prev_action] = (1 - eta) * prediction + eta * target
-
-        self.numIters += 1
-
-        # discretize state
-        state = FeatureExtract.process_state(raw_state)
-        # calculate the optimal action to take given current Q
-        opt_action = self.get_opt_action(state)
-        # retrieve prev state and action from experience, then 
-        #    use all info to update Q
-        prev_state, prev_action = self.get_prev_state_action()
-        update_Q(prev_state, prev_action, reward, state, opt_action)
-        # select an epsilon-greedy action
-        e_action = self.get_e_action(self.epsilon, opt_action, raw_state)
-        # record everything into experience
-        self.log_action(reward, state, e_action)
-
-        return e_action
 
 
     def read_model(self, path):
