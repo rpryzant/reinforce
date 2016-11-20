@@ -20,9 +20,13 @@ def main(args, parser):
     if args.p == "human":
         game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
-    elif args.p == "baseline":
-        # TODO FIX
-        return 
+    elif args.p == "followBaseline":
+        agent = agents.FollowBaseline()
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
+    elif args.p == "randomBaseline":
+        agent = agents.RandomBaseline()
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)        
 
     elif args.p == "oracle":
         game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b, args.wr)

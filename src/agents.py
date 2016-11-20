@@ -21,11 +21,19 @@ import copy
 class BaseAgent(object):
     """abstract base class for all agents
     """
-    def getAction(self, state):
+    def takeAction(self, state):
         raise NotImplementedError("Override me")
 
     def incorporateFedback(self, state, action, reward, newState):
         raise NotImplementedError("override me")
+
+    def actions(self, state):
+        """returns set of possible actions from a state
+        """
+        if state['game_state'] == STATE_BALL_IN_PADDLE:
+            return [[INPUT_SPACE]]
+        else:
+            return [[], [INPUT_L], [INPUT_R]]
 
     def read_model(self, path):
         print 'reading weights from %s...' % path
@@ -69,16 +77,6 @@ class RLAgent(BaseAgent):
         for f, v in features.items():
             score += self.weights[f] * v
         return score
-
-
-    def actions(self, state):
-        """returns set of possible actions from a state
-        """
-        if state['game_state'] == STATE_BALL_IN_PADDLE:
-            return [[INPUT_SPACE]]
-        else:
-            return [[], [INPUT_L], [INPUT_R]]
-
 
     def takeAction(self, state):
         """ returns action according to e-greedy policy
@@ -320,40 +318,48 @@ class DiscreteQLearningAgent(BaseAgent):
 
 
 
-class Baseline(BaseAgent):
-    """TODOD - FINISH FIXING
-
-    dumb agent that always follows the ball"""
-
+class FollowBaseline(BaseAgent):
+    """dumb agent that always follows the ball
+    """
     def __init__(self):
-        super(Baseline, self).__init__()
+        super(FollowBaseline, self).__init__()
         self.press_space = False
         self.go_right = False
         self.game_over = False
         return
 
-    def processStateAndTakeAction(self, state):
-        # process state
+    def takeAction(self, state):
+        if self.press_space:
+            self.press_space = False
+            return [INPUT_SPACE]
+        else:
+            return [INPUT_R] if self.go_right else [INPUT_L]
+
+    def incorporateFeedback(self, state, action, reward, newState):
         if state['game_state'] == STATE_BALL_IN_PADDLE:
             self.press_space = True
         if state['ball'].x > state['paddle'].x + PADDLE_WIDTH/2:
             self.go_right = True
         else:
             self.go_right = False
+        return None
 
-        # take action 
-        if self.press_space:
-            self.press_space = False
-            return [INPUT_SPACE]
-        else:
-            if self.go_right:
-                return [INPUT_R]
-            else:
-                return [INPUT_L]
-            return []
 
-    def readModel(self, path):
-        pass
 
-    def writeModel(self, path):
-        pass
+
+
+class RandomBaseline(BaseAgent):
+    """even dumber agent that always moves randomly
+    """
+    def __init__(self):
+        super(RandomBaseline, self).__init__()
+
+    def takeAction(self, state):
+        return random.choice(self.actions(state))
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        return None
+
+
+
+
