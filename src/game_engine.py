@@ -362,9 +362,13 @@ class BotControlledBreakout(Breakout):
             prev_state = None
             state = self.get_state()
             while state['game_state'] != STATE_GAME_OVER:
+                # if newAction is none then we're dealing with an off-policy algorithm:
+                #    query the external acting policy for the next action.
+                # otherwise, we're training an on-policy algorithm, so take the action
+                #    specified by the agent in incorporateFeedback
                 if new_action is None:
                     action = self.agent.takeAction(state)
-                else:
+                else:   
                     action = new_action
                 reward, new_state = self.executeAction(action)
                 new_action = self.agent.incorporateFeedback(state, action, reward, new_state)

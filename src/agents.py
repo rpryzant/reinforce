@@ -16,7 +16,7 @@ import random
 from feature_extractors import SimpleDiscreteFeatureExtractor as DiscreteFeaturizer
 from replay_memory import ReplayMemory
 import copy
-
+from eligibility_tracer import EligibilityTrace
 
 class BaseAgent(object):
     """abstract base class for all agents
@@ -207,12 +207,89 @@ class QLearningReplayMemory(RLAgent):
 
 
 
+class SARSA(RLAgent):
+    """implementation of SARSA learning
+    """
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+        super(SARSA, self).__init__(featureExtractor, epsilon, gamma, stepSize)
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        """performs a SARSA update
+        """
+        prediction = self.getQ(state, action)
+        newAction = None
+        target = reward
+        # TODO - CHECK THAT END GAME PRODUCES NONE STATE
+        if newState != None:
+            # instead of taking the max over actions (like Q-learning),
+            #   SARSA selects actions by using its acting policy
+            #   (in this case, e-greedy) 
+            # This action is returned to the game engine so that
+            #   it can be executed on in the next iteration of the game loop
+            newAction = self.takeAction(newState)
+            target += self.discount * self.getQ(newState, newAction)
+
+        update = self.stepSize * (prediction - target)
+        # clip gradient - TODO EXPORT TO UTILS?
+        update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+        for f, v in self.featureExtractor.get_features(state, action).iteritems():
+            self.weights[f] = self.weights[f] - update * v
+        # return newAction. Denotes that this is an on-policy algorithm
+        return newAction
+
+
+
+class SARSALambda(RLAgent):
+    """impementation of SARSA lambda algorithm.
+        class SARSA is equivilant to this with lambda = 0, but 
+        we seperate the two out because
+            1) it's nice to juxtapose the two algorithms side-by-side
+            2) SARSA lambda incurrs the overhead of maintaining
+                eligibility traces
+        note that the algorithm isn't explicitly parameterized with lambda.
+            instead, we provide a decay rate and threshold. On each iteration,
+            the decay is applied all rewards in the eligibility trace. Those 
+            past rewards who have decayed below the threshold are dropped
+    """
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, threshold=0.1, decay=0.98):
+        super(SARSALambda, self).__init__(featureExtractor, epsilon, gamma, stepSize)
+        self.eligibility_trace = EligibilityTrace(decay, threshold)
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        """performs a SARSA update. Leverages the eligibility trace to update 
+            parameters towards sum of discounted rewards
+        """
+        self.eligibility_trace.update()
+        prediction = self.getQ(state, action)
+        newAction = None
+        target = reward
+        for f, v in self.featureExtractor.get_features(state, action).iteritems():
+            self.eligibility_trace[f] += v
+
+        if newState != None:
+            newAction = self.takeAction(newState)
+            target += self.discount * self.getQ(newState, newAction)
+
+        update = self.stepSize * (prediction - target)
+        # clip gradient - TODO EXPORT TO UTILS?
+        update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+
+        for key, eligibility in self.eligibility_trace.iteritems():
+            self.weights[key] -= update * eligibility
+        return newAction
+
+
+
+
+
+
+
+
 
 
 
 
 ####################################################################################
-# # # # # #  # STUFF BELOW THIS LINE IS POTENTIALLY BROKEN: FIX IT!! # # # # # # # #
 ####################################################################################
 
 

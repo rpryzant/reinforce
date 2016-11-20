@@ -45,6 +45,18 @@ def main(args, parser):
         agent = agents.QLearningReplayMemory(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
+    elif args.p == 'sarsa':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        agent = agents.SARSA(fe)        
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
+    elif args.p == 'sarsaLambda':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        agent = agents.SARSALambda(fe)        
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
+
+
     ############################################################################
     # # # # # # # # # test bed for experimental features # # # # # # # # # # # #
     ############################################################################    
