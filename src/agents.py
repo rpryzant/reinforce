@@ -14,6 +14,7 @@ import string
 from function_approximators import *
 import random
 from feature_extractors import SimpleDiscreteFeatureExtractor as FeatureExtract
+import numpy as np
 
 class Agent(object):
     """Abstract base class for game-playing agents
@@ -254,36 +255,79 @@ class NeuralNetworkAgent(Agent):
     """Q learning agent that uses function approximation to deal
        with continuous states
     """
-    def __init__(self, gamma=0.99):
+    def __init__(self, feature_extractor, gamma=0.99, epsilon = 0.3):
         super(NeuralNetworkAgent, self).__init__()
+        self.feature_len = 7
         self.weights = defaultdict(float)
-        w_in = tf.Variable(tf.random_normal([14, 32], stddev=0.1),
+        self.feature_extractor = feature_extractor
+        w_in = tf.Variable(tf.random_normal([self.feature_len, 8], stddev=0.1),
                       name="weights_input")
-        w_h1 = tf.Variable(tf.random_normal([32, 64], stddev=0.1),
+        w_h1 = tf.Variable(tf.random_normal([8, 8], stddev=0.1),
                       name="weights_hidden1")
-        w_h2 = tf.Variable(tf.random_normal([64, 32], stddev=0.1),
+        w_h2 = tf.Variable(tf.random_normal([8, 8], stddev=0.1),
                       name="weights_hidden2")
-        w_o = tf.Variable(tf.random_normal([32, 2], stddev=0.1),
+        w_o = tf.Variable(tf.random_normal([8, 2], stddev=0.1),
                       name="weights_output")
         self.weights = {'W_in':w_in, 'W_h1': w_h1, 'W_h2': w_h2, 'W_o': w_o}
-        X = tf.placeholder("float", [1,14])
-        y = tf.placeholder("float", [2,1])
-        self.neuralNetwork = model(X, w_in, w_h1, w_h2, w_o)
-        cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(pred, y))
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+        self.X = tf.placeholder("float", [1,self.feature_len])
+        self.y = tf.placeholder("float", [1,2])
+        self.neuralNetwork = self.model(self.X, w_in, w_h1, w_h2, w_o)
+        # cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(self.neuralNetwork, self.y))
+        cost = tf.reduce_sum(tf.square(self.neuralNetwork - self.y))
+        # self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)     #Need to change this
+        self.optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(cost)
         self.gamma = gamma
+        self.epsilon = epsilon
+        self.sess = tf.Session()
+        self.sess.run(tf.initialize_all_variables())
         return
 
-    def model(X, w_in, w_h1, w_h2, w_o):
-      layer1 = tf.relu(tf.matmul(X,w_in))
-      layer2 = tf.relu(tf.matmul(layer1,w_h1))
-      layer3 = tf.relu(tf.matmul(layer2,w_h2))
-      output_layer = tf.matmul(layer3, w_o)
-      return output_layer
+    def model(self, X, w_in, w_h1, w_h2, w_o):
+        layer1 = tf.nn.relu(tf.matmul(X,w_in))
+        layer2 = tf.nn.relu(tf.matmul(layer1,w_h1))
+        layer3 = tf.nn.relu(tf.matmul(layer2,w_h2))
+        output_layer = tf.matmul(layer3, w_o)
+        return output_layer
 
-    def processStateAndTakeAction(self, state):
-        def update_Q(self, prev_state, prev_action, reward, newState, opt_action):
-          pass
+    def processStateAndTakeAction(self, reward, raw_state):
+        prev_raw_state, prev_action = self.get_prev_state_action()
+        if prev_raw_state != {}:
+            X_prev_state = np.asmatrix(self.feature_extractor.process_state(prev_raw_state).values())
+        else:
+            X_prev_state = np.asmatrix([0]*self.feature_len)
+        #Use get_features to get the actions incorporated with the state but requires to compute the optimal action
+        X_state = np.asmatrix(self.feature_extractor.process_state(raw_state).values() )
+        Q_prev = self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_prev_state})
+        new_Q_array =  self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
+        new_Q = max(new_Q_array)
+        opt_action = np.argmax(new_Q_array)
+        # print new_Q_array, opt_action, new_Q, reward
+        target = reward + self.gamma * new_Q
+        if INPUT_L in prev_action:
+            Q_prev[0,0] = target
+        elif INPUT_R in prev_action:
+            Q_prev[0,1] = target
+        _, new_w_in, new_w_h1, new_w_h2, new_w_o = self.sess.run(
+            [self.optimizer, self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']], 
+            feed_dict = { self.X: X_prev_state, self.y: Q_prev }) 
+        self.weights['W_in'].assign(new_w_in)
+        self.weights['W_h1'].assign(new_w_h1)
+        self.weights['W_h2'].assign(new_w_h2)
+        self.weights['W_o'].assign(new_w_o)
+        self.sess.run([self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']])
+        # self.weights = {'W_in':w_in, 'W_h1': w_h1, 'W_h2': w_h2, 'W_o': w_o}
+        self.sess.run(tf.initialize_all_variables())
+        if random.random() < self.epsilon:
+            opt_action = random.choice([0, 1, 2])
+        
+        if opt_action == 0 : final_opt_action = [INPUT_L]
+        if opt_action == 1 : final_opt_action = [INPUT_R]
+        if opt_action == 2 : final_opt_action = [INPUT_SPACE]
+
+        self.log_action(reward, raw_state, final_opt_action)
+        return final_opt_action
+
+
      
 
 class Baseline(Agent):

@@ -347,10 +347,11 @@ class BotControlledBreakout(Breakout):
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
             # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -10.0  # - (abs(cur['paddle'].x - cur['ball'].x))
+            return -10.0 - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))
 
         # return difference in points
-        return cur['score'] - prev['score'] 
+        # print cur['score'] - prev['score'],- (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
+        return cur['score'] - prev['score'] - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
 
 
     def run(self):

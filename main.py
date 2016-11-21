@@ -55,6 +55,11 @@ def main(args, parser):
         agent = agents.FuncApproxQLearningAgent(fa)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
+    elif args.p == 'cnn':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        agent = agents.NeuralNetworkAgent(fe)
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
 
     game.run()
 
