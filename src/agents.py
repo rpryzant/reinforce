@@ -304,11 +304,15 @@ class NNAgent(BaseAgent):
                                                     self.define_model(self.feature_len)
 
     def toFeatureVector(self, state, action):
+        """converts state/action pair to 1xN matrix for learning
+        """
         features = self.featureExtractor.get_features(state, action)
         return utils.dictToNpMatrix(features)
 
 
     def getQ(self, state, action, features=None):
+        """Network forward pass
+        """
         if features is None:
             features = self.toFeatureVector(state, action)
 
@@ -417,6 +421,8 @@ class NNAgent(BaseAgent):
 
 
     def variable_summaries(self, var, name):
+        """produces mean/std/max/min logging summaries for a variable
+        """
         with tf.name_scope('summaries'):
             mean = tf.reduce_mean(var)
             tf.scalar_summary('mean/' + name, mean)
