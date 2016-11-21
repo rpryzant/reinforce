@@ -121,9 +121,9 @@ class CNNAgent(BaseAgent):
         self.weights = defaultdict(float)
         w_in = tf.Variable(tf.random_normal([self.feature_len, 8], stddev=0.1),
                       name="weights_input")
-        w_h1 = tf.Variable(tf.random_normal([8, 8], stddev=0.1),
+        w_h1 = tf.Variable(tf.random_normal([8, 16], stddev=0.1),
                       name="weights_hidden1")
-        w_h2 = tf.Variable(tf.random_normal([8, 8], stddev=0.1),
+        w_h2 = tf.Variable(tf.random_normal([16, 8], stddev=0.1),
                       name="weights_hidden2")
         w_o = tf.Variable(tf.random_normal([8, 2], stddev=0.1),
                       name="weights_output")
@@ -134,8 +134,8 @@ class CNNAgent(BaseAgent):
         # cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(self.neuralNetwork, self.y))
         cost = tf.reduce_sum(tf.square(self.neuralNetwork - self.y))
         # self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)     #Need to change this
-        # self.optimizer = tf.train.GradientDescentOptimizer(1.0/np.sqrt(self.numIters)).minimize(cost)
-        self.optimizer = tf.train.GradientDescentOptimizer(stepSize).minimize(cost)
+        self.optimizer = tf.train.GradientDescentOptimizer(10.0/np.sqrt(self.numIters)).minimize(cost)
+        # self.optimizer = tf.train.GradientDescentOptimizer(stepSize).minimize(cost)
         self.sess = tf.Session()
         self.sess.run(tf.initialize_all_variables())
         return
@@ -158,7 +158,13 @@ class CNNAgent(BaseAgent):
 
         X_state = np.asmatrix(self.featureExtractor.process_state(raw_state).values())
         new_Q_array =  self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
-        print new_Q_array, np.argmax(new_Q_array),
+        # print new_Q_array, np.argmax(new_Q_array),
+        # print new_Q_array
+        if new_Q_array[0] == 0 and new_Q_array[1] == 1:
+            print 'new_Q_array is ', new_Q_array
+
+        if utils.allSame(new_Q_array):
+            opt_action = random.choice([0,1])
         opt_action = np.argmax(new_Q_array)
         if opt_action == 0 : return [INPUT_L]
         if opt_action == 1 : return [INPUT_R]
@@ -176,7 +182,7 @@ class CNNAgent(BaseAgent):
         X_state = np.asmatrix(self.featureExtractor.process_state(raw_state).values())
         X_newState = np.asmatrix(self.featureExtractor.process_state(raw_newState).values())
         Q_target = self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})
-        target = reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0])
+        target = reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_newState})[0])
         if INPUT_L in action:
             Q_target[0,0] = target
         elif INPUT_R in action:
@@ -188,7 +194,7 @@ class CNNAgent(BaseAgent):
             [self.optimizer, self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']], 
             feed_dict = { self.X: X_state, self.y: Q_target }) 
         # print target , reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0])
-        print action, Q_target, '     ',self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
+        # print action, Q_target, '     ',self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
         self.weights['W_in'].assign(new_w_in)
         self.weights['W_h1'].assign(new_w_h1)
         self.weights['W_h2'].assign(new_w_h2)
