@@ -55,9 +55,9 @@ def main(args, parser):
         agent = agents.SARSALambda(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
-    elif args.p == 'cnn':
+    elif args.p == 'nn':
         fe = ft_extract.SimpleContinuousFeatureExtractor()
-        agent = agents.CNNAgent(fe)        
+        agent = agents.NNAgent(fe, args.v)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
 

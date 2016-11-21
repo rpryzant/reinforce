@@ -299,7 +299,7 @@ class Breakout(object):
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
             # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -10.0 - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))
+            return -100.0 - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))
 
         # return difference in points
         # print cur['score'] - prev['score'],- (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01

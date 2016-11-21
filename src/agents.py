@@ -107,104 +107,6 @@ class RLAgent(BaseAgent):
 
 
 
-class CNNAgent(BaseAgent):
-    """Approximation using the CNN
-    """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
-        self.featureExtractor = featureExtractor
-        self.explorationProb = epsilon
-        self.discount = gamma
-        self.stepSize = stepSize
-        self.numIters = 1
-
-        self.feature_len = 7
-        self.weights = defaultdict(float)
-        w_in = tf.Variable(tf.random_normal([self.feature_len, 8], stddev=0.1),
-                      name="weights_input")
-        w_h1 = tf.Variable(tf.random_normal([8, 16], stddev=0.1),
-                      name="weights_hidden1")
-        w_h2 = tf.Variable(tf.random_normal([16, 8], stddev=0.1),
-                      name="weights_hidden2")
-        w_o = tf.Variable(tf.random_normal([8, 2], stddev=0.1),
-                      name="weights_output")
-        self.weights = {'W_in':w_in, 'W_h1': w_h1, 'W_h2': w_h2, 'W_o': w_o}
-        self.X = tf.placeholder("float", [1,self.feature_len])
-        self.y = tf.placeholder("float", [1,2])
-        self.neuralNetwork = self.model(self.X, w_in, w_h1, w_h2, w_o)
-        # cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(self.neuralNetwork, self.y))
-        cost = tf.reduce_sum(tf.square(self.neuralNetwork - self.y))
-        # self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)     #Need to change this
-        self.optimizer = tf.train.GradientDescentOptimizer(10.0/np.sqrt(self.numIters)).minimize(cost)
-        # self.optimizer = tf.train.GradientDescentOptimizer(stepSize).minimize(cost)
-        self.sess = tf.Session()
-        self.sess.run(tf.initialize_all_variables())
-        return
-
-    def model(self, X, w_in, w_h1, w_h2, w_o):
-        layer1 = tf.nn.relu(tf.matmul(X,w_in))
-        layer2 = tf.nn.relu(tf.matmul(layer1,w_h1))
-        layer3 = tf.nn.relu(tf.matmul(layer2,w_h2))
-        output_layer = tf.matmul(layer3, w_o)
-        return output_layer
-
-
-    def takeAction(self, raw_state):
-        """ returns action according to e-greedy policy
-        """
-        self.numIters += 1
-        actions = self.actions(raw_state)
-        if random.random() < self.explorationProb:
-            return random.choice(actions)
-
-        X_state = np.asmatrix(self.featureExtractor.process_state(raw_state).values())
-        new_Q_array =  self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
-        # print new_Q_array, np.argmax(new_Q_array),
-        # print new_Q_array
-        if new_Q_array[0] == 0 and new_Q_array[1] == 1:
-            print 'new_Q_array is ', new_Q_array
-
-        if utils.allSame(new_Q_array):
-            opt_action = random.choice([0,1])
-        opt_action = np.argmax(new_Q_array)
-        if opt_action == 0 : return [INPUT_L]
-        if opt_action == 1 : return [INPUT_R]
-
-    def getStepSize(self):
-        return self.stepSize
-
-    def copyWeights(self):
-        return copy.deepcopy(self.weights)
-
-    def write_model(self, path):
-        super(RLAgent, self).write_model(path, self.weights)
-
-    def incorporateFeedback(self, raw_state, action, reward, raw_newState):
-        X_state = np.asmatrix(self.featureExtractor.process_state(raw_state).values())
-        X_newState = np.asmatrix(self.featureExtractor.process_state(raw_newState).values())
-        Q_target = self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})
-        target = reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_newState})[0])
-        if INPUT_L in action:
-            Q_target[0,0] = target
-        elif INPUT_R in action:
-            # print Q_target, target,
-            Q_target[0,1] = target
-            # print Q_target, target
-
-        _, new_w_in, new_w_h1, new_w_h2, new_w_o = self.sess.run(
-            [self.optimizer, self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']], 
-            feed_dict = { self.X: X_state, self.y: Q_target }) 
-        # print target , reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0])
-        # print action, Q_target, '     ',self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
-        self.weights['W_in'].assign(new_w_in)
-        self.weights['W_h1'].assign(new_w_h1)
-        self.weights['W_h2'].assign(new_w_h2)
-        self.weights['W_o'].assign(new_w_o)
-        self.sess.run([self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']])
-        # print self.sess.run(tf.reduce_sum(tf.square(self.weights['W_in'])))
-
-
-
-
 
 
 
@@ -378,6 +280,151 @@ class SARSALambda(RLAgent):
         return newAction
 
 
+
+
+
+
+
+
+
+class NNAgent(BaseAgent):
+    """Approximation using the NN
+    """
+    def __init__(self, featureExtractor, verbose, epsilon=0.5, gamma=0.993, stepSize=0.001):
+        self.featureExtractor = featureExtractor
+        self.verbose = verbose
+        self.explorationProb = epsilon
+        self.discount = gamma
+        self.stepSize = stepSize
+        self.numIters = 1
+
+        self.feature_len = 8
+        self.input_placeholder, self.target_placeholder, self.loss, \
+            self.train_step, self.sess, self.output, self.merged, self.log_writer = \
+                                                    self.define_model(self.feature_len)
+
+    def toFeatureVector(self, state, action):
+        features = self.featureExtractor.get_features(state, action)
+        return utils.dictToNpMatrix(features)
+
+
+    def getQ(self, state, action, features=None):
+        if features is None:
+            features = self.toFeatureVector(state, action)
+
+        # output is a 1x1 matrix
+        output = self.sess.run(self.output,
+            feed_dict={
+                self.input_placeholder: features,
+            })
+
+        return output[0][0]
+
+
+    def takeAction(self, state):
+        """ returns action according to e-greedy policy
+        """
+        self.numIters += 1
+        actions = self.actions(state)
+        if random.random() < self.explorationProb:
+            return random.choice(actions)
+
+        scores = [(self.getQ(state, action), action) for action in actions]
+
+        if utils.allSame([q[0] for q in scores]):
+            return random.choice(scores)[1]
+
+        return max(scores)[1]
+
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        """perform NN Q-learning update
+        """
+        # no feedback at start of game
+        if state == {}:
+            return
+
+        cur_features = self.toFeatureVector(state, action)
+
+        target = reward
+
+        if newState['game_state'] != STATE_GAME_OVER:
+            target += self.discount * max([self.getQ(newState, action) for action in self.actions(newState)])
+
+        if self.verbose:
+            summary, _ = self.sess.run([self.merged, self.train_step],
+                feed_dict={
+                    self.input_placeholder: cur_features,
+                    self.target_placeholder: [[target]],
+                })
+            self.log_writer.add_summary(
+                summary, self.numIters)
+        else:
+            self.sess.run([self.train_step],
+                feed_dict={
+                    self.input_placeholder: cur_features,
+                    self.target_placeholder: [[target]],
+                })
+
+
+    def define_model(self, input_size):
+        """Defines a Q-learning network
+        """
+        # input and output placeholders
+        inputs = tf.placeholder(tf.float32, shape=[None, input_size], name="input")
+        targets = tf.placeholder(tf.float32, shape=[None, 1], name="target")
+
+        # layer 0
+        w_0 = tf.Variable(tf.random_normal([input_size, 16]))
+        b_0 = tf.Variable(tf.random_normal([16])) 
+        fc_0 = tf.add(tf.matmul(inputs, w_0), b_0)
+        fc_0 = tf.sigmoid(fc_0)
+
+        # layer 1
+        w_1 = tf.Variable(tf.random_normal([16, 1])) 
+        b_1 = tf.Variable(tf.random_normal([1])) 
+        fc_1 = tf.add(tf.matmul(fc_0, w_1), b_1)
+        fc_1 = tf.nn.sigmoid(fc_1)
+
+        # training
+        loss = tf.reduce_sum(tf.square(fc_1 - targets))
+        starter_learning_rate = 0.1
+        global_step = tf.Variable(0, trainable=False)
+        learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
+                                           10000, 0.96, staircase=True)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        train_step = optimizer.minimize(loss)
+
+        # get session, initialize stuff
+        sess = tf.Session()
+        sess.run(tf.initialize_all_variables())
+
+        # log stuff if verbose 
+        if self.verbose:
+            self.variable_summaries(w_0, 'w_0')
+            self.variable_summaries(b_0, 'b_0')
+            self.variable_summaries(w_1, 'w_1')
+            self.variable_summaries(b_1, 'b_1')        
+            self.variable_summaries(fc_1, 'output')
+            self.variable_summaries(fc_1, 'loss')
+
+            merged = tf.merge_all_summaries()
+            log_writer = tf.train.SummaryWriter('./', sess.graph)
+        else:
+            merged, log_writer = None, None
+
+        return inputs, targets, loss, train_step, sess, fc_1, merged, log_writer
+
+
+    def variable_summaries(self, var, name):
+        with tf.name_scope('summaries'):
+            mean = tf.reduce_mean(var)
+            tf.scalar_summary('mean/' + name, mean)
+            with tf.name_scope('stddev'):
+                stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
+            tf.scalar_summary('sttdev/' + name, stddev)
+            tf.scalar_summary('max/' + name, tf.reduce_max(var))
+            tf.scalar_summary('min/' + name, tf.reduce_min(var))
 
 
 

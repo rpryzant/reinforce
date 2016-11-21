@@ -1,6 +1,7 @@
 import math
 from collections import defaultdict
 import copy
+import numpy as np
 
 def dotProduct(a, b):
     """ dot product of two vectors """
@@ -78,3 +79,8 @@ def deserializeAction(a):
 
 def allSame(l):
     return all(x == l[0] for x in l)
+
+def dictToNpMatrix(d):
+    return np.asmatrix([d[k] for k in sorted(d)])
+
+
