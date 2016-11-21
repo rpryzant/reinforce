@@ -8,15 +8,16 @@ from collections import defaultdict
 import re
 import math
 import random
-from utils import *
+import utils 
 import tensorflow as tf
 import string
-from function_approximators import *
+# from function_approximators import *
 import random
 from feature_extractors import SimpleDiscreteFeatureExtractor as DiscreteFeaturizer
 from replay_memory import ReplayMemory
 import copy
 from eligibility_tracer import EligibilityTrace
+import numpy as np
 
 class BaseAgent(object):
     """abstract base class for all agents
@@ -58,7 +59,7 @@ class BaseAgent(object):
 
 
 class RLAgent(BaseAgent):
-    """base class for RL agents taht approximate the value function.
+    """base class for RL agents that approximate the value function.
     """
     def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
         self.featureExtractor = featureExtractor
@@ -106,6 +107,98 @@ class RLAgent(BaseAgent):
 
 
 
+class CNNAgent(BaseAgent):
+    """Approximation using the CNN
+    """
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+        self.featureExtractor = featureExtractor
+        self.explorationProb = epsilon
+        self.discount = gamma
+        self.stepSize = stepSize
+        self.numIters = 1
+
+        self.feature_len = 7
+        self.weights = defaultdict(float)
+        w_in = tf.Variable(tf.random_normal([self.feature_len, 8], stddev=0.1),
+                      name="weights_input")
+        w_h1 = tf.Variable(tf.random_normal([8, 8], stddev=0.1),
+                      name="weights_hidden1")
+        w_h2 = tf.Variable(tf.random_normal([8, 8], stddev=0.1),
+                      name="weights_hidden2")
+        w_o = tf.Variable(tf.random_normal([8, 2], stddev=0.1),
+                      name="weights_output")
+        self.weights = {'W_in':w_in, 'W_h1': w_h1, 'W_h2': w_h2, 'W_o': w_o}
+        self.X = tf.placeholder("float", [1,self.feature_len])
+        self.y = tf.placeholder("float", [1,2])
+        self.neuralNetwork = self.model(self.X, w_in, w_h1, w_h2, w_o)
+        # cost = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits(self.neuralNetwork, self.y))
+        cost = tf.reduce_sum(tf.square(self.neuralNetwork - self.y))
+        # self.optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)     #Need to change this
+        # self.optimizer = tf.train.GradientDescentOptimizer(1.0/np.sqrt(self.numIters)).minimize(cost)
+        self.optimizer = tf.train.GradientDescentOptimizer(stepSize).minimize(cost)
+        self.sess = tf.Session()
+        self.sess.run(tf.initialize_all_variables())
+        return
+
+    def model(self, X, w_in, w_h1, w_h2, w_o):
+        layer1 = tf.nn.relu(tf.matmul(X,w_in))
+        layer2 = tf.nn.relu(tf.matmul(layer1,w_h1))
+        layer3 = tf.nn.relu(tf.matmul(layer2,w_h2))
+        output_layer = tf.matmul(layer3, w_o)
+        return output_layer
+
+
+    def takeAction(self, raw_state):
+        """ returns action according to e-greedy policy
+        """
+        self.numIters += 1
+        actions = self.actions(raw_state)
+        if random.random() < self.explorationProb:
+            return random.choice(actions)
+
+        X_state = np.asmatrix(self.featureExtractor.process_state(raw_state).values())
+        new_Q_array =  self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
+        print new_Q_array, np.argmax(new_Q_array),
+        opt_action = np.argmax(new_Q_array)
+        if opt_action == 0 : return [INPUT_L]
+        if opt_action == 1 : return [INPUT_R]
+
+    def getStepSize(self):
+        return self.stepSize
+
+    def copyWeights(self):
+        return copy.deepcopy(self.weights)
+
+    def write_model(self, path):
+        super(RLAgent, self).write_model(path, self.weights)
+
+    def incorporateFeedback(self, raw_state, action, reward, raw_newState):
+        X_state = np.asmatrix(self.featureExtractor.process_state(raw_state).values())
+        X_newState = np.asmatrix(self.featureExtractor.process_state(raw_newState).values())
+        Q_target = self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})
+        target = reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0])
+        if INPUT_L in action:
+            Q_target[0,0] = target
+        elif INPUT_R in action:
+            # print Q_target, target,
+            Q_target[0,1] = target
+            # print Q_target, target
+
+        _, new_w_in, new_w_h1, new_w_h2, new_w_o = self.sess.run(
+            [self.optimizer, self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']], 
+            feed_dict = { self.X: X_state, self.y: Q_target }) 
+        # print target , reward + self.discount * max(self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0])
+        print action, Q_target, '     ',self.sess.run(self.neuralNetwork, feed_dict = {self.X: X_state})[0]
+        self.weights['W_in'].assign(new_w_in)
+        self.weights['W_h1'].assign(new_w_h1)
+        self.weights['W_h2'].assign(new_w_h2)
+        self.weights['W_o'].assign(new_w_o)
+        self.sess.run([self.weights['W_in'], self.weights['W_h1'], self.weights['W_h2'], self.weights['W_o']])
+        # print self.sess.run(tf.reduce_sum(tf.square(self.weights['W_in'])))
+
+
+
+
 
 
 
@@ -130,7 +223,7 @@ class QLearning(RLAgent):
 
         update = self.stepSize * (prediction - target)
         # clip gradient - TODO EXPORT TO UTILS?
-        update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+        update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
 
         for f, v in self.featureExtractor.get_features(state, action).iteritems():
             self.weights[f] = self.weights[f] - update * v
@@ -200,7 +293,7 @@ class QLearningReplayMemory(RLAgent):
 
             update = self.stepSize * (prediction - target)
             # clip gradient - TODO EXPORT TO UTILS?
-            update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+            update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
             for f, v in self.featureExtractor.get_features(state, action).iteritems():
                 self.weights[f] = self.weights[f] - update * v
         return None
@@ -231,7 +324,7 @@ class SARSA(RLAgent):
 
         update = self.stepSize * (prediction - target)
         # clip gradient - TODO EXPORT TO UTILS?
-        update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+        update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
         for f, v in self.featureExtractor.get_features(state, action).iteritems():
             self.weights[f] = self.weights[f] - update * v
         # return newAction. Denotes that this is an on-policy algorithm
@@ -272,13 +365,11 @@ class SARSALambda(RLAgent):
 
         update = self.stepSize * (prediction - target)
         # clip gradient - TODO EXPORT TO UTILS?
-        update = max(-constants.MAX_GRADIENT, update) if update < 0 else min(constants.MAX_GRADIENT, update)
+        update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
 
         for key, eligibility in self.eligibility_trace.iteritems():
             self.weights[key] -= update * eligibility
         return newAction
-
-
 
 
 

@@ -8,7 +8,7 @@ import argparse
 import src.game_engine as breakout
 import src.agents as agents
 import sys
-import src.function_approximators as fn_approx
+# import src.function_approximators as fn_approx
 import src.feature_extractors as ft_extract 
 
 
@@ -55,6 +55,10 @@ def main(args, parser):
         agent = agents.SARSALambda(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
+    elif args.p == 'cnn':
+        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        agent = agents.CNNAgent(fe)        
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
 
     ############################################################################
