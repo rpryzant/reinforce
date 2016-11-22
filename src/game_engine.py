@@ -201,12 +201,8 @@ class Breakout(object):
             self.show_message("PRESS B TO BOOST", 0, 30)
         elif self.game_state == STATE_GAME_OVER:
             self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
-            if not self.game_over:
-                self.end_game()
         elif self.game_state == STATE_WON:
             self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
-            if not self.game_over:
-                self.end_game()
 
         self.boost_time = max(self.boost_time - 1, 0)
         
@@ -253,35 +249,6 @@ class Breakout(object):
             'lives': self.lives
             }
         return state
-
-
-    def end_game(self):
-        """ Gets called when the game ends
-            -Used for data collection and batch runs
-            """
-        self.game_over = True
-
-        if self.verbose:
-            print 'score,%s|frames,%s|bricks,%s' % (self.score, self.time, len(self.bricks))
-        elif self.csv:
-            print "%s,%s,%s" % (self.score, self.time, len(self.bricks))
-
-        # todo save more stuff for aggregate stats?
-        self.experience += [{
-                'score': self.score,
-                'frames': self.time,
-                'bricks_remaining': len(self.bricks)
-                }]
-
-
-        self.take_input([INPUT_QUIT])
-        if self.verbose or self.csv:
-            n = len(self.experience)
-            print 'Performance summary:'
-            print '\tGames: %s' % n
-            print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
-            print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
-            print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
 
 
     @abc.abstractmethod
@@ -394,6 +361,7 @@ class BotControlledBreakout(Breakout):
 
         if self.write_model is not None:
             self.agent.write_model(self.write_model)
+
         if self.verbose:
             print '\nFINAL STATS:'
             print 'Performance summary:'
@@ -407,10 +375,6 @@ class BotControlledBreakout(Breakout):
 
         self.take_input([INPUT_QUIT])
 
-    def end_game(self):
-        super(BotControlledBreakout, self).end_game()
-        if self.batches == 1 and self.write_model:
-            self.agent.write_model('model_params.txt')
 
 
 
