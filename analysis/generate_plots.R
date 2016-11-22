@@ -3,6 +3,14 @@
 #setwd("~/Dropbox/school/ai/cs221_project/analysis")
 
 
+# i generated my data with
+#
+#    ./run_several.sh sarsa 1000 10
+#    ./run_several.sh randomBaseline 1000 10
+#    ...etc...
+#
+
+
 
 temp = list.files(pattern="*.csv")
 list2env(
