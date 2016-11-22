@@ -128,9 +128,11 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
         state['ball-paddle-x'] = (raw_state['ball'].x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] -  (raw_state['paddle'].x + PADDLE_WIDTH/2)*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
         # if raw_state['game_state'] == STATE_BALL_IN_PADDLE:
         #     print state['ball-paddle-x']*SCREEN_SIZE[0] , state['ball-x']*SCREEN_SIZE[0] , state['paddle-x']*SCREEN_SIZE[0] 
-        state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
-        state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180
+        state['ball-vel-x'] = raw_state['ball_vel'][0] #*1.0/ SCREEN_SIZE[0]
+        #state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 360
         state['ball-vel-y'] = raw_state['ball_vel'][1]*1.0/ SCREEN_SIZE[1]
+
+        # print state['ball-x']
 
         return state
 

@@ -37,7 +37,7 @@ class BaseAgent(object):
         if state['game_state'] == STATE_BALL_IN_PADDLE:
             return [[INPUT_SPACE]]
         else:
-            return [[], [INPUT_L], [INPUT_R]]
+            return [ [INPUT_L], [INPUT_R]]
 
     def read_model(self, path):
         print 'reading weights from %s...' % path
@@ -93,6 +93,7 @@ class RLAgent(BaseAgent):
         # break ties with random movement
         if utils.allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
+        # print max(scores)[1]
         return max(scores)[1]
 
 
@@ -116,7 +117,7 @@ class RLAgent(BaseAgent):
 class QLearning(RLAgent):
     """Implementation of the Q-Learning algorithm
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+    def __init__(self, featureExtractor, epsilon=0.2, gamma=0.993, stepSize=0.001):
         super(QLearning, self).__init__(featureExtractor, epsilon, gamma, stepSize)
 
     def incorporateFeedback(self, state, action, reward, newState):
@@ -138,6 +139,9 @@ class QLearning(RLAgent):
 
         for f, v in self.featureExtractor.get_features(state, action).iteritems():
             self.weights[f] = self.weights[f] - update * v
+        # for f, v in self.weights.iteritems():
+        #     print f, v
+        # print ' '
         # return None to denote that this is an off-policy algorithm
         return None
 
@@ -150,8 +154,8 @@ class QLearningReplayMemory(RLAgent):
     """Implementation of Q-learing with replay memory, which updates model parameters
         towards a random sample of past experiences 
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, 
-        num_static_target_steps=2500, memory_size=100000, replay_sample_size=1):
+    def __init__(self, featureExtractor, epsilon=0.1, gamma=0.993, stepSize=0.001, 
+        num_static_target_steps=100, memory_size=1000, replay_sample_size=100):
         super(QLearningReplayMemory, self).__init__(featureExtractor, epsilon, gamma, stepSize)
         self.num_static_target_steps = num_static_target_steps
         self.memory_size = memory_size
@@ -193,9 +197,11 @@ class QLearningReplayMemory(RLAgent):
 
         self.replay_memory.store((state, action, reward, newState))
 
-        for i in range(self.sample_size if self.replay_memory.isFull() else 1):
+        # for i in range(self.sample_size if self.replay_memory.isFull() else 1):
+        for i in range(self.sample_size ):
             state, action, reward, newState = self.replay_memory.sample()
             prediction = self.getQ(state, action)
+
 
             target = reward 
             if newState['game_state'] != STATE_GAME_OVER:
@@ -301,7 +307,7 @@ class NNAgent(BaseAgent):
         self.stepSize = stepSize
         self.numIters = 1
 
-        self.feature_len = 8
+        self.feature_len = 7
         self.input_placeholder, self.target_placeholder, self.loss, \
             self.train_step, self.sess, self.output, self.merged, self.log_writer = \
                                                     self.define_model(self.feature_len)
@@ -324,7 +330,7 @@ class NNAgent(BaseAgent):
             feed_dict={
                 self.input_placeholder: features,
             })
-
+        # print output[0][0]
         return output[0][0]
 
 
