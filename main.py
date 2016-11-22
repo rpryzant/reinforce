@@ -13,9 +13,6 @@ import src.feature_extractors as ft_extract
 
 
 def main(args, parser):
-    if args.csv:
-        print 'score,time,bricks'
-
     game = None
     if args.p == "human":
         game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b, args.wr, args.rd)
@@ -26,7 +23,7 @@ def main(args, parser):
 
     elif args.p == "randomBaseline":
         agent = agents.RandomBaseline()
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)        
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == "oracle":
         game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b, args.wr)

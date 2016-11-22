@@ -28,6 +28,9 @@ class BaseAgent(object):
     def incorporateFedback(self, state, action, reward, newState):
         raise NotImplementedError("override me")
 
+    def reset(self):
+        raise NotImplementedError("overide me")
+
     def actions(self, state):
         """returns set of possible actions from a state
         """

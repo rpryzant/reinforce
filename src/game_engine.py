@@ -282,7 +282,7 @@ class Breakout(object):
             print '\tMean score: %s' % (sum(x['score'] for x in self.experience) * 1.0 / n)
             print '\tMean time: %s' % (sum(x['frames'] for x in self.experience) * 1.0 / n)
             print '\tMean remaining bricks: %s' % (sum(x['bricks_remaining'] for x in self.experience) * 1.0 / n)
-            quit() 
+
 
     @abc.abstractmethod
     def run(self):
@@ -357,8 +357,12 @@ class BotControlledBreakout(Breakout):
 
 
     def run(self):
-        for episode in xrange(self.batches):
+        if self.csv:
+            print 'cum_score,score,time,bricks'
 
+        cumulative_score = 0
+        cumulative_time = 0
+        for episode in xrange(self.batches):
             new_action = None
             prev_state = None
             state = self.get_state()
@@ -375,12 +379,33 @@ class BotControlledBreakout(Breakout):
                 new_action = self.agent.incorporateFeedback(state, action, reward, new_state)
                 state = new_state
 
-            self.take_input([INPUT_ENTER])    
+            # bookeeping...
+            cumulative_score += self.score
+            cumulative_time += self.time
+
             if not self.csv:
                 print 'episode %s complete.' % episode
+            if self.verbose:
+                print 'score,%s|frames,%s|bricks,%s' % (self.score, self.time, len(self.bricks))
+            elif self.csv:
+                print "%s,%s,%s,%s" % (cumulative_score, self.score, self.time, len(self.bricks))
+
+            self.take_input([INPUT_ENTER])    
+
         if self.write_model is not None:
             self.agent.write_model(self.write_model)
+        if self.verbose:
+            print '\nFINAL STATS:'
+            print 'Performance summary:'
+            print '\tGames: %s' % self.batches
+            print '\tMean score: %s' % (cumulative_score * 1.0 / self.batches)
+            print '\tMean time: %s' % (cumulative_time * 1.0 / self.batches)
+        elif self.csv:
+            print '\nFINAL STATS:'
+            print 'cum_score,cum_time,mean_score,mean_time'
+            print '%s,%s,%s,%s' % (cumulative_score, cumulative_time, (cumulative_score * 1.0 / self.batches), (cumulative_time * 1.0 / self.batches))
 
+        self.take_input([INPUT_QUIT])
 
     def end_game(self):
         super(BotControlledBreakout, self).end_game()
