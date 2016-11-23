@@ -25,7 +25,7 @@ class Breakout(object):
         self.display = display
         self.write_model = write_model
         self.model_path = model_path
-
+        self.hit_ball = False
         self.experience = []
 
         pygame.init()
@@ -160,6 +160,7 @@ class Breakout(object):
             self.game_state = STATE_WON
             
         if self.ball.colliderect(self.paddle):
+            self.hit_ball = True
             distance_from_center = float(self.ball.centerx - self.paddle.centerx)
             self.ball.top = PADDLE_Y - BALL_DIAMETER
             self.ball_vel[0] += distance_from_center / 7
@@ -266,11 +267,16 @@ class Breakout(object):
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
             # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -00.0 - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
+            return -(abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.05
+
 
         # return difference in points
         # print cur['score'] - prev['score'],- (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
-        return (cur['score'] - prev['score']) - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
+        reward = (cur['score'] - prev['score']) # if cur['score'] > 3 else 0
+        if self.hit_ball:
+            reward += 5
+            self.hit_ball = False
+        return reward
 
     def executeAction(self, action):
         """executes a game turn based on the given action"""
@@ -343,6 +349,7 @@ class BotControlledBreakout(Breakout):
                 else:   
                     action = new_action
                 reward, new_state = self.executeAction(action)
+
                 new_action = self.agent.incorporateFeedback(state, action, reward, new_state)
                 state = new_state
 

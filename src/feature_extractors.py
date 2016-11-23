@@ -149,6 +149,41 @@ class SimpleContinuousFeatureExtractor(FeatureExtractor):
 
 
 
+
+
+class ContinuousFeaturesV2(FeatureExtractor):
+    def __init__(self):
+        super(ContinuousFeaturesV2, self).__init__()
+        return
+    
+    def process_state(self, raw_state):
+        state = defaultdict(int)
+
+        is_left = raw_state['ball'].x < raw_state['paddle'].x
+        moving_left = raw_state['ball_vel'][0] < 0
+        state['ball_left_moving_left'] = 1 if (is_left and moving_left) else 0
+        state['ball_left_moving_right'] = 1 if (is_left and not moving_left) else 0
+
+        state['ball_right_moving_left'] = 1 if (not is_left and moving_left) else 0
+        state['ball_right_moving_right'] = 1 if (not is_left and not moving_left) else 0
+
+        return state
+
+
+    def get_features(self, raw_state, action):
+        state = self.process_state(raw_state)
+
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+
+        return out
+
+
+
+
+
 class ContinuousFeaturesWithInteractions(SimpleContinuousFeatureExtractor):
     """ TODO - underflows - not used"""
     def __init__(self):
