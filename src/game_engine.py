@@ -332,6 +332,8 @@ class BotControlledBreakout(Breakout):
 
         cumulative_score = 0
         cumulative_time = 0
+        state = self.get_state()
+        bricks = copy.deepcopy(state['bricks'])
         for episode in xrange(self.batches):
             new_action = None
             prev_state = None
@@ -342,6 +344,7 @@ class BotControlledBreakout(Breakout):
                 # otherwise, we're training an on-policy algorithm, so take the action
                 #    specified by the agent in incorporateFeedback
                 if new_action is None:
+                    state['original_bricks'] = bricks
                     action = self.agent.takeAction(state)
                 else:   
                     action = new_action

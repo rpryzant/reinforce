@@ -57,6 +57,11 @@ def main(args, parser):
         agent = agents.NNAgent(fe, args.v)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
+    elif args.p == 'nn_pr':
+        fe = ft_extract.ContinuousFeaturesV3()
+        agent = agents.NNAgent_PR(fe, args.v)        
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
 
     ############################################################################
     # # # # # # # # # test bed for experimental features # # # # # # # # # # # #

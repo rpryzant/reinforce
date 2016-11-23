@@ -8,7 +8,7 @@ from collections import defaultdict
 import re
 import math
 import random
-import utils 
+from utils import *
 import tensorflow as tf
 import string
 # from function_approximators import *
@@ -436,6 +436,170 @@ class NNAgent(BaseAgent):
             tf.scalar_summary('min/' + name, tf.reduce_min(var))
 
 
+class NNAgent_PR(BaseAgent):
+    """Approximation using the NN
+    """
+    def __init__(self, featureExtractor, verbose, epsilon=0.5, gamma=0.993, stepSize=0.001):
+        self.featureExtractor = featureExtractor
+        self.verbose = verbose
+        self.explorationProb = epsilon
+        self.discount = gamma
+        self.stepSize = stepSize
+        self.numIters = 1
+        self.feature_len = 11
+        self.input_placeholder, self.target_placeholder, self.loss, \
+            self.train_step, self.sess, self.output, self.merged, self.log_writer = \
+                                                    self.define_model(self.feature_len)
+
+    def toFeatureVector(self, state, action):
+        """converts state/action pair to 1xN matrix for learning
+        """
+        features = self.featureExtractor.get_features(state, action)
+        return dictToNpMatrix(features)
+
+
+    def getQ(self, state, action, features=None):
+        """Network forward pass
+        """
+        
+        features = self.toFeatureVector(state, action)
+
+        # output is a 1x1 matrix
+        output = self.sess.run(self.output,
+            feed_dict={
+                self.input_placeholder: features,
+            })
+
+        return output[0][0]
+
+
+    def takeAction(self, state):
+        """ returns action according to e-greedy policy
+        """
+        self.numIters += 1
+        actions = self.actions(state)
+        if random.random() < self.explorationProb:
+            return random.choice(actions)
+        scores = [(self.getQ(state, action), action) for action in actions]
+
+        if allSame([q[0] for q in scores]):
+            return random.choice(scores)[1]
+
+        return max(scores)[1]
+
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        """perform NN Q-learning update
+        """
+        # no feedback at start of game
+        if state == {}:
+            return
+
+        cur_features = self.toFeatureVector(state, action)
+
+        target = reward
+
+        if newState['game_state'] != STATE_GAME_OVER:
+            target += self.discount * max([self.getQ(newState, action) for action in self.actions(newState)])
+
+        if self.verbose:
+            summary, _ = self.sess.run([self.merged, self.train_step],
+                feed_dict={
+                    self.input_placeholder: cur_features,
+                    self.target_placeholder: [[target]],
+                })
+            self.log_writer.add_summary(
+                summary, self.numIters)
+        else:
+            self.sess.run([self.train_step],
+                feed_dict={
+                    self.input_placeholder: cur_features,
+                    self.target_placeholder: [[target]],
+                })
+
+
+    def define_model(self, input_size):
+        """Defines a Q-learning network
+        """
+        # input and output placeholders
+        inputs = tf.placeholder(tf.float32, shape=[None, input_size], name="input")
+        targets = tf.placeholder(tf.float32, shape=[None, 1], name="target")
+
+        # layer 0
+        w_0 = tf.Variable(tf.random_normal([input_size, 18]))
+        b_0 = tf.Variable(tf.random_normal([18])) 
+        fc_0 = tf.add(tf.matmul(inputs, w_0), b_0)
+        fc_0 = tf.sigmoid(fc_0)
+
+        # layer 1
+        w_1 = tf.Variable(tf.random_normal([18, 24])) 
+        b_1 = tf.Variable(tf.random_normal([24])) 
+        fc_1 = tf.add(tf.matmul(fc_0, w_1), b_1)
+        fc_1 = tf.nn.sigmoid(fc_1)
+
+        # layer 2
+        w_2 = tf.Variable(tf.random_normal([24, 24])) 
+        b_2 = tf.Variable(tf.random_normal([24])) 
+        fc_2 = tf.add(tf.matmul(fc_1, w_2), b_2)
+        fc_2 = tf.nn.sigmoid(fc_2)
+
+        # layer 3
+        w_3 = tf.Variable(tf.random_normal([24, 18])) 
+        b_3 = tf.Variable(tf.random_normal([18])) 
+        fc_3 = tf.add(tf.matmul(fc_2, w_3), b_3)
+        fc_3 = tf.nn.sigmoid(fc_3)
+
+        # layer 4
+        w_4 = tf.Variable(tf.random_normal([18, 1])) 
+        b_4 = tf.Variable(tf.random_normal([1])) 
+        fc_4 = tf.add(tf.matmul(fc_3, w_4), b_4)
+        fc_4 = tf.nn.sigmoid(fc_4)
+
+        # training
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(fc_4,targets ))
+        global_step = tf.Variable(0, trainable=False)
+        
+        train_step = tf.train.RMSPropOptimizer(0.001, 0.99).minimize(cost)
+
+        # get session, initialize stuff
+        sess = tf.Session()
+        sess.run(tf.initialize_all_variables())
+
+        # log stuff if verbose 
+        if self.verbose:
+            self.variable_summaries(w_0, 'w_0')
+            self.variable_summaries(b_0, 'b_0')
+            self.variable_summaries(w_1, 'w_1')
+            self.variable_summaries(b_1, 'b_1')
+            self.variable_summaries(w_1, 'w_2')
+            self.variable_summaries(b_1, 'b_2')  
+            self.variable_summaries(w_1, 'w_3')
+            self.variable_summaries(b_1, 'b_3') 
+            self.variable_summaries(w_1, 'w_4')
+            self.variable_summaries(b_1, 'b_4')           
+            self.variable_summaries(fc_4, 'output')
+            self.variable_summaries(fc_4, 'loss')
+
+            merged = tf.merge_all_summaries()
+            log_writer = tf.train.SummaryWriter('./', sess.graph)
+        else:
+            merged, log_writer = None, None
+
+        return inputs, targets, cost, train_step, sess, fc_4, merged, log_writer
+
+
+    def variable_summaries(self, var, name):
+        """produces mean/std/max/min logging summaries for a variable
+        """
+        with tf.name_scope('summaries'):
+            mean = tf.reduce_mean(var)
+            tf.scalar_summary('mean/' + name, mean)
+            with tf.name_scope('stddev'):
+                stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
+            tf.scalar_summary('sttdev/' + name, stddev)
+            tf.scalar_summary('max/' + name, tf.reduce_max(var))
+            tf.scalar_summary('min/' + name, tf.reduce_min(var))
+
 
 
 
@@ -471,7 +635,7 @@ class DiscreteQLearning(BaseAgent):
 
         scores = [(self.Q_values[state][serializeList(action)], action) for action in actions]
         # break ties with random movement
-        if utils.allSame([x[0] for x in scores]):
+        if allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
         return max(scores)[1]
 

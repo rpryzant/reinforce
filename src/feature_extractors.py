@@ -7,6 +7,7 @@ from constants import *
 from collections import defaultdict
 from utils import *
 from copy import deepcopy
+import math
 
 class FeatureExtractor(object):
     def __init__(self):
@@ -179,28 +180,107 @@ class ContinuousFeaturesV2(FeatureExtractor):
 
         return out
 
-
-
-class ContinuousFeaturesWithInteractions(SimpleContinuousFeatureExtractor):
-    """ TODO - underflows - not used"""
+class ContinuousFeaturesV3(FeatureExtractor):
     def __init__(self):
-        super(ContinuousFeaturesWithInteractions, self).__init__()
+        super(ContinuousFeaturesV3, self).__init__()
         return
+    
+    def get_dist(self, brick, ball):
+        ball_x = (ball.x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0]
+        brick_x = brick.x / SCREEN_SIZE[0]
+        ball_y = (ball.y + BALL_RADIUS)*1.0 / SCREEN_SIZE[1]
+        brick_y = brick.y / SCREEN_SIZE[1]
+        return math.sqrt((brick_x - ball_x)**2 + (brick_y - ball_y)**2)
+
+    def process_state(self, raw_state):
+        state = defaultdict(int)
+
+        state['ball-x'] = (raw_state['ball'].x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] 
+        state['ball-y'] = (raw_state['ball'].y - BALL_RADIUS)*1.0 / SCREEN_SIZE[1]
+        state['paddle-x'] = (raw_state['paddle'].x + PADDLE_WIDTH/2)*1.0 / SCREEN_SIZE[0] 
+        state['ball-paddle-x'] = (raw_state['ball'].x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] -  (raw_state['paddle'].x + PADDLE_WIDTH/2)*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+        state['ball-paddle-y'] = (raw_state['ball'].y + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] -  (raw_state['paddle'].y + PADDLE_HEIGHT/2)*1.0 / SCREEN_SIZE[0]  
+        state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+        state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180
+        state['ball-vel-y'] = raw_state['ball_vel'][1]*1.0/ SCREEN_SIZE[1]
+
+        # for brick in state['original_bricks']:
+        #     if brick in raw_state['bricks']:
+        #         state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
+        #         dist_to_ball = self.get_dist(brick, raw_state['ball'])
+        #         state['brick-('+str(brick.x)+','+str(brick.y)+')-ball-dist'] = dist_to_ball
+        #     else:
+        #         state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 0
+        #         state['brick-('+str(brick.x)+','+str(brick.y)+')-ball-dist'] = 1000
+        state['ball-dist-from-right-wall'] = (SCREEN_SIZE[0] - (raw_state['ball'].x + BALL_RADIUS)*1.0)/SCREEN_SIZE[0]
+        state['ball-dist-from-top-wall'] = (SCREEN_SIZE[1] - (raw_state['ball'].y + BALL_RADIUS)*1.0)/SCREEN_SIZE[1]
+        return state
 
 
     def get_features(self, raw_state, action):
-        state = super(ContinuousFeaturesWithInteractions, self).process_state(raw_state)
+        state = self.process_state(raw_state)
 
         out = defaultdict(float)
         out['intercept'] = 1
         for k, v in state.iteritems():
             out[k, serializeList(action)] = v
 
-        for k1, v1 in state.iteritems():
-            for k2, v2 in state.iteritems():
-                    out[k1 + '--' + k2, serializeList(action)] = v1 * v2
-        print out
         return out
+
+class ContinuousFeaturesV4(FeatureExtractor):
+    def __init__(self):
+        super(ContinuousFeaturesV2, self).__init__()
+        return
+    
+    def process_state(self, raw_state):
+        state = defaultdict(int)
+
+        is_left = raw_state['ball'].x < raw_state['paddle'].x
+        moving_left = raw_state['ball_vel'][0] < 0
+        moving_down = raw_state['ball_vel'][1] < 0
+
+        state['ball_left_moving_left_moving_down'] = 1 if (is_left and moving_left and moving_down) else 0
+        state['ball_left_moving_right_moving_down'] = 1 if (is_left and not moving_left and moving_down) else 0
+        state['ball_right_moving_left_moving_down'] = 1 if (not is_left and moving_left and moving_down) else 0
+        state['ball_right_moving_right_moving_down'] = 1 if (not is_left and not moving_left and moving_down) else 0
+        state['ball_left_moving_left_moving_up'] = 1 if (is_left and moving_left and not moving_down) else 0
+        state['ball_left_moving_right_moving_up'] = 1 if (is_left and not moving_left and not moving_down) else 0
+        state['ball_right_moving_left_moving_up'] = 1 if (not is_left and moving_left and not moving_down) else 0
+        state['ball_right_moving_right_moving_up'] = 1 if (not is_left and not moving_left and not moving_down) else 0
+
+        return state
+
+
+    def get_features(self, raw_state, action):
+        state = self.process_state(raw_state)
+
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+
+        return out
+
+# class ContinuousFeaturesWithInteractions(SimpleContinuousFeatureExtractor):
+#     """ TODO - underflows - not used"""
+#     def __init__(self):
+#         super(ContinuousFeaturesWithInteractions, self).__init__()
+#         return
+
+
+#     def get_features(self, raw_state, action):
+#         state = super(ContinuousFeaturesWithInteractions, self).process_state(raw_state)
+
+#         out = defaultdict(float)
+#         out['intercept'] = 1
+#         for k, v in state.iteritems():
+#             out[k, serializeList(action)] = v
+
+#         for k1, v1 in state.iteritems():
+#             for k2, v2 in state.iteritems():
+#                     out[k1 + '--' + k2, serializeList(action)] = v1 * v2
+#         print out
+#         return out
 
 
 
