@@ -145,7 +145,9 @@ class Breakout(object):
         """ logic for collision between ball and game object """
         for brick in self.bricks:
             if self.ball.colliderect(brick):
-                self.score += BROKEN_BRICK_PTS
+                # only allow points after first brick is broken
+                if len(self.bricks) < 6 * 9:
+                    self.score += BROKEN_BRICK_PTS
                 self.num_hits += 1
                 if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\
                      or (brick.x +BRICK_WIDTH < self.ball.x - self.ball_vel[0] * self.speed_multiplyer):
@@ -269,7 +271,7 @@ class Breakout(object):
             return -(abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.05
 
         # return difference in points, not counting first broken brick
-        reward = (cur['score'] - prev['score']) if cur['score'] > 3 else 0
+        reward = (cur['score'] - prev['score']) 
         if self.hit_ball:
             reward += 5
             self.hit_ball = False
@@ -400,8 +402,9 @@ class OracleControlledBreakout(Breakout):
         for brick in self.bricks:
             if self.ball.colliderect(brick):
                 self.hit_ball = True
-
-                self.score += BROKEN_BRICK_PTS
+                # only allow points after first brick is broken
+                if len(self.bricks) < 6 * 9:
+                    self.score += BROKEN_BRICK_PTS
                 self.num_hits += 1
                 if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\
                      or (brick.x +BRICK_WIDTH < self.ball.x - self.ball_vel[0] * self.speed_multiplyer):

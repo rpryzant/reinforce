@@ -181,7 +181,7 @@ class ContinuousFeaturesV2(FeatureExtractor):
 
 
 
-class ContinuousFeaturesWithInteractions(SimpleContinuousFeatureExtractor):
+class ContinuousFeaturesWithInteractions(ContinuousFeaturesV1):
     """ TODO - underflows - not used"""
     def __init__(self):
         super(ContinuousFeaturesWithInteractions, self).__init__()
