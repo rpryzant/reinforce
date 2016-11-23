@@ -91,7 +91,7 @@ class RLAgent(BaseAgent):
             return random.choice(actions)
         scores = [(self.getQ(state, action), action) for action in actions]
         # break ties with random movement
-        if utils.allSame([x[0] for x in scores]):
+        if allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
         return max(scores)[1]
 

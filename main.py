@@ -38,7 +38,7 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearReplayQ':
-        fe = ft_extract.ContinuousFeaturesV2()
+        fe = ft_extract.ContinuousFeaturesV4()
         agent = agents.QLearningReplayMemory(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
@@ -48,7 +48,7 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsaLambda':
-        fe = ft_extract.ContinuousFeaturesV2()
+        fe = ft_extract.ContinuousFeaturesV4()
         agent = agents.SARSALambda(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
