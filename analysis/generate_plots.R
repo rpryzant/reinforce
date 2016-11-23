@@ -1,6 +1,6 @@
 
 # SET YOUR OWN WD TO THIS DIRECTORY
-#setwd("~/Dropbox/school/ai/cs221_project/analysis")
+setwd("~/Dropbox/school/ai/cs221_project/analysis")
 
 
 # i generated my data with
@@ -31,7 +31,7 @@ random = rowMeans(cbind(
     randomBaseline.9$cum_score,
     randomBaseline.10$cum_score
     ))
-plot(random, type="l", main="relative performance of differet agents",ylab="mean cumulative points across 10 runs", xlab="games")
+plot(random, type="l", main="relative performance of differet agents",ylab="mean cumulative points across 10 runs", xlab="games",ylim=c(0, 6500))
 
 
 sarsa = rowMeans(cbind(
