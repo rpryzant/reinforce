@@ -151,7 +151,7 @@ class QLearningReplayMemory(RLAgent):
         towards a random sample of past experiences 
     """
     def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, 
-        num_static_target_steps=2500, memory_size=100000, replay_sample_size=1):
+        num_static_target_steps=500, memory_size=2000, replay_sample_size=8):
         super(QLearningReplayMemory, self).__init__(featureExtractor, epsilon, gamma, stepSize)
         self.num_static_target_steps = num_static_target_steps
         self.memory_size = memory_size

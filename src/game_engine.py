@@ -25,7 +25,7 @@ class Breakout(object):
         self.display = display
         self.write_model = write_model
         self.model_path = model_path
-
+        self.hit_ball = False
         self.experience = []
 
         pygame.init()
@@ -265,12 +265,15 @@ class Breakout(object):
         if prev['game_state'] != STATE_WON and cur['game_state'] == STATE_WON:
             return 1000.0
         elif prev['game_state'] != STATE_GAME_OVER and cur['game_state'] == STATE_GAME_OVER:
-            # TODO REMOVED -- encourage agent to 'barely' miss ball?
-            return -100.0 - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))
+            # TODO tune this
+            return -(abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.05
 
-        # return difference in points
-        # print cur['score'] - prev['score'],- (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
-        return cur['score'] - prev['score'] - (abs(cur['paddle'].x - cur['ball'].x + PADDLE_WIDTH/2 - BALL_RADIUS))*0.01
+        # return difference in points, not counting first broken brick
+        reward = (cur['score'] - prev['score']) if cur['score'] > 3 else 0
+        if self.hit_ball:
+            reward += 5
+            self.hit_ball = False
+        return reward
 
     def executeAction(self, action):
         """executes a game turn based on the given action"""
@@ -368,10 +371,10 @@ class BotControlledBreakout(Breakout):
             print '\tGames: %s' % self.batches
             print '\tMean score: %s' % (cumulative_score * 1.0 / self.batches)
             print '\tMean time: %s' % (cumulative_time * 1.0 / self.batches)
-        # elif self.csv:
-        #     print '\nFINAL STATS:'
-        #     print 'cum_score,cum_time,mean_score,mean_time'
-        #     print '%s,%s,%s,%s' % (cumulative_score, cumulative_time, (cumulative_score * 1.0 / self.batches), (cumulative_time * 1.0 / self.batches))
+        elif self.csv:
+            print '\nFINAL STATS:'
+            print 'cum_score,cum_time,mean_score,mean_time'
+            print '%s,%s,%s,%s' % (cumulative_score, cumulative_time, (cumulative_score * 1.0 / self.batches), (cumulative_time * 1.0 / self.batches))
 
         self.take_input([INPUT_QUIT])
 
@@ -396,6 +399,8 @@ class OracleControlledBreakout(Breakout):
         """
         for brick in self.bricks:
             if self.ball.colliderect(brick):
+                self.hit_ball = True
+
                 self.score += BROKEN_BRICK_PTS
                 self.num_hits += 1
                 if (brick.x > self.ball.x -self.ball_vel[0] * self.speed_multiplyer + BALL_DIAMETER)\

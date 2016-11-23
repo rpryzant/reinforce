@@ -33,27 +33,27 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearQ':
-        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.QLearning(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearReplayQ':
-        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.QLearningReplayMemory(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsa':
-        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.SARSA(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsaLambda':
-        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.SARSALambda(fe)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'nn':
-        fe = ft_extract.SimpleContinuousFeatureExtractor()
+        fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.NNAgent(fe, args.v)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
