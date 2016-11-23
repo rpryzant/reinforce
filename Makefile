@@ -9,4 +9,4 @@ install:
 
 
 test:
-	./test/benchmark.sh
+	./test_scripts/benchmark.sh
