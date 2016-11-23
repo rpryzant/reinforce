@@ -114,9 +114,9 @@ class SanityCheckFeatures(FeatureExtractor):
 
 
 
-class SimpleContinuousFeatureExtractor(FeatureExtractor):
+class ContinuousFeaturesV1(FeatureExtractor):
     def __init__(self):
-        super(SimpleContinuousFeatureExtractor, self).__init__()
+        super(ContinuousFeaturesV1, self).__init__()
         return
     
     def process_state(self, raw_state):
