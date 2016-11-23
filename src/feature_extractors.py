@@ -159,6 +159,7 @@ class ContinuousFeaturesV2(FeatureExtractor):
 
         is_left = raw_state['ball'].x < raw_state['paddle'].x
         moving_left = raw_state['ball_vel'][0] < 0
+
         state['ball_left_moving_left'] = 1 if (is_left and moving_left) else 0
         state['ball_left_moving_right'] = 1 if (is_left and not moving_left) else 0
 
