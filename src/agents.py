@@ -64,11 +64,11 @@ class BaseAgent(object):
 class RLAgent(BaseAgent):
     """base class for RL agents that approximate the value function.
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=None):
         self.featureExtractor = featureExtractor
         self.explorationProb = epsilon
         self.discount = gamma
-        self.stepSize = stepSize
+        self.getStepSize = stepSize
         self.numIters = 1
         self.weights = defaultdict(float)
 
@@ -95,9 +95,21 @@ class RLAgent(BaseAgent):
             return random.choice(scores)[1]
         return max(scores)[1]
 
-
-    def getStepSize(self):
+    # step size functions
+    @staticmethod
+    def constant(numIters):
         return self.stepSize
+
+    def setStepSize(self, size):
+        self.stepSize = size
+
+    @staticmethod
+    def inverse(numIters):
+        return 1.0 / numIters
+
+    @staticmethod
+    def inverseSqrt(numIters):
+        return 1.0 / math.sqrt(numIters)
 
     def copyWeights(self):
         return copy.deepcopy(self.weights)
@@ -116,7 +128,7 @@ class RLAgent(BaseAgent):
 class QLearning(RLAgent):
     """Implementation of the Q-Learning algorithm
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=None):
         super(QLearning, self).__init__(featureExtractor, epsilon, gamma, stepSize)
 
     def incorporateFeedback(self, state, action, reward, newState):
@@ -132,7 +144,7 @@ class QLearning(RLAgent):
         if newState['game_state'] != STATE_GAME_OVER:
             target += self.discount * max(self.getQ(newState, action) for action in self.actions(newState))
 
-        update = self.stepSize * (prediction - target)
+        update = self.getStepSize(self.numIters) * (prediction - target)
         # clip gradient - TODO EXPORT TO UTILS?
         update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
 
@@ -150,7 +162,7 @@ class QLearningReplayMemory(RLAgent):
     """Implementation of Q-learing with replay memory, which updates model parameters
         towards a random sample of past experiences 
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, 
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=None, 
         num_static_target_steps=750, memory_size=2500, replay_sample_size=4):
         super(QLearningReplayMemory, self).__init__(featureExtractor, epsilon, gamma, stepSize)
         self.num_static_target_steps = num_static_target_steps
@@ -202,7 +214,7 @@ class QLearningReplayMemory(RLAgent):
                 # Use the static auxiliary weights as your target
                 target += self.discount * max(self.getStaticQ(newState, newAction) for newAction in self.actions(newState))
 
-            update = self.stepSize * (prediction - target)
+            update = self.getStepSize(self.numIters) * (prediction - target)
             # clip gradient - TODO EXPORT TO UTILS?
             update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
             for f, v in self.featureExtractor.get_features(state, action).iteritems():
@@ -214,7 +226,7 @@ class QLearningReplayMemory(RLAgent):
 class SARSA(RLAgent):
     """implementation of SARSA learning
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001):
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=None):
         super(SARSA, self).__init__(featureExtractor, epsilon, gamma, stepSize)
 
     def incorporateFeedback(self, state, action, reward, newState):
@@ -233,7 +245,7 @@ class SARSA(RLAgent):
             newAction = self.takeAction(newState)
             target += self.discount * self.getQ(newState, newAction)
 
-        update = self.stepSize * (prediction - target)
+        update = self.getStepSize(self.numIters) * (prediction - target)
         # clip gradient - TODO EXPORT TO UTILS?
         update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
         for f, v in self.featureExtractor.get_features(state, action).iteritems():
@@ -255,7 +267,7 @@ class SARSALambda(RLAgent):
             the decay is applied all rewards in the eligibility trace. Those 
             past rewards who have decayed below the threshold are dropped
     """
-    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=0.001, threshold=0.1, decay=0.98):
+    def __init__(self, featureExtractor, epsilon=0.5, gamma=0.993, stepSize=None, threshold=0.1, decay=0.98):
         super(SARSALambda, self).__init__(featureExtractor, epsilon, gamma, stepSize)
         self.eligibility_trace = EligibilityTrace(decay, threshold)
 
@@ -274,7 +286,7 @@ class SARSALambda(RLAgent):
             newAction = self.takeAction(newState)
             target += self.discount * self.getQ(newState, newAction)
 
-        update = self.stepSize * (prediction - target)
+        update = self.getStepSize(self.numIters) * (prediction - target)
         # clip gradient - TODO EXPORT TO UTILS?
         update = max(-MAX_GRADIENT, update) if update < 0 else min(MAX_GRADIENT, update)
 
@@ -293,12 +305,12 @@ class SARSALambda(RLAgent):
 class NNAgent(BaseAgent):
     """Approximation using the NN
     """
-    def __init__(self, featureExtractor, verbose, epsilon=0.5, gamma=0.993, stepSize=0.001):
+    def __init__(self, featureExtractor, verbose, epsilon=0.5, gamma=0.993, stepSize=None):
         self.featureExtractor = featureExtractor
         self.verbose = verbose
         self.explorationProb = epsilon
         self.discount = gamma
-        self.stepSize = stepSize
+        self.getStepSize = stepSize
         self.numIters = 1
 
         self.feature_len = 8

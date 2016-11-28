@@ -13,6 +13,11 @@ import src.feature_extractors as ft_extract
 
 
 def main(args, parser):
+    # global parameters (can/should be changed)
+    EXPLORATION_PROB = 0.5
+    DISCOUNT = 0.993
+
+
     game = None
     if args.p == "human":
         game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b, args.wr, args.rd)
@@ -29,32 +34,51 @@ def main(args, parser):
         game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b, args.wr)
 
     elif args.p == 'simpleQLearning':
-        agent = agents.DiscreteQLearning()
+        agent = agents.DiscreteQLearning(gamma=DISCOUNT,
+                                         epsilon=EXPLORATION_PROB,
+                                         stepSize=0.001)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearQ':
         fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.QLearning(fe)        
+        agent = agents.QLearning(fe, 
+                                 epsilon=EXPLORATION_PROB,
+                                 gamma=DISCOUNT,
+                                 stepSize=agents.RLAgent.inverseSqrt)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearReplayQ':
         fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.QLearningReplayMemory(fe)        
+        agent = agents.QLearningReplayMemory(fe,
+                                             epsilon=EXPLORATION_PROB,
+                                             gamma=DISCOUNT,
+                                             stepSize=agents.RLAgent.inverseSqrt)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsa':
         fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.SARSA(fe)        
+        agent = agents.SARSA(fe,
+                             EPSILON=EXPLORATION_PROB,
+                             gamma=DISCOUNT,
+                             stepSize=agents.RLAgent.inverse)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsaLambda':
         fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.SARSALambda(fe)        
+        agent = agents.SARSALambda(fe,
+                                   epsilon=EXPLORATION_PROB,
+                                   gamma=DISCOUNT,
+                                   stepSize=agents.RLAgent.inverse,
+                                   threshold=0.1,
+                                   decay=0.98)       
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'nn':
         fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.NNAgent(fe, args.v)        
+        agent = agents.NNAgent(fe, args.v,
+                               epsilon=EXPLORATION_PROB,
+                               gamma=DISCOUNT,
+                               stepSize=0.001)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
 
