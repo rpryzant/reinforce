@@ -52,7 +52,10 @@ def main(args, parser):
         agent = agents.QLearningReplayMemory(fe,
                                              epsilon=EXPLORATION_PROB,
                                              gamma=DISCOUNT,
-                                             stepSize=agents.RLAgent.inverseSqrt)        
+                                             stepSize=agents.RLAgent.inverseSqrt,
+                                             num_static_target_steps=750,
+                                             memory_size=2500, 
+                                             replay_sample_size=4)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsa':
