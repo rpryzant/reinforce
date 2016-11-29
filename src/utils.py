@@ -2,6 +2,7 @@ import math
 from collections import defaultdict
 import copy
 import numpy as np
+import constants
 
 def dotProduct(a, b):
     """ dot product of two vectors """
@@ -49,13 +50,14 @@ def combine(c, x1, d, x2):
 def discretizeLocation(x, y):
     """converts continuous coordinates in R^2 to discrete location measurement 
 
-    does so by converting game board to grid of 20x20 pixel squares, then
+    does so by converting game board to grid of 10x10 pixel squares, then
       gives the index of the square that (x, y) is in
     """
-    entries_in_row = SCREEN_SIZE[0] / 20
-    x_grid = x / 10
-    y_grid = y / 10
-    return x_grid + y_grid * (SCREEN_SIZE[0] / 20)
+    row_delta = constants.SCREEN_SIZE[0] / 10
+    col_delta = constants.SCREEN_SIZE[1] / 10
+    x_grid = x / row_delta
+    y_grid = y / col_delta
+    return x_grid + y_grid * 10
 
 def discretizeAngle(vec):
     """buckets the continuous angle of a vector into one of 16 discrete angle categories
@@ -89,4 +91,6 @@ def dictToNpMatrix(d):
     """converts python dict to np matrix"""
     return np.asmatrix([d[k] for k in sorted(d)])
 
-
+def sigmoid(x):
+    """sigmoid function"""
+    return 1.0 / (1 + math.exp(-x))

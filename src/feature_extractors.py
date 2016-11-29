@@ -147,24 +147,18 @@ class ContinuousFeaturesV1(FeatureExtractor):
 
 
 class ContinuousFeaturesV2(FeatureExtractor):
+    # seems to work moderately well with every
     def __init__(self):
         super(ContinuousFeaturesV2, self).__init__()
         return
     
     def process_state(self, raw_state):
         state = defaultdict(int)
-
-        is_left = raw_state['ball'].x < raw_state['paddle'].x
-        moving_left = raw_state['ball_vel'][0] < 0
-
-        state['ball_left_moving_left'] = 1 if (is_left and moving_left) else 0
-        state['ball_left_moving_right'] = 1 if (is_left and not moving_left) else 0
-
-        state['ball_right_moving_left'] = 1 if (not is_left and moving_left) else 0
-        state['ball_right_moving_right'] = 1 if (not is_left and not moving_left) else 0
-
+        pos = raw_state['ball'].centerx - raw_state['paddle'].centerx
+        relative_pos = 'left' if raw_state['ball'].centerx < raw_state['paddle'].centerx else 'right'
+        movement_dir = 'left' if raw_state['ball_vel'][0] < 0 else 'right'
+        state['pos_%s_moving_%s' % (relative_pos, movement_dir)] = 1
         return state
-
 
     def get_features(self, raw_state, action):
         state = self.process_state(raw_state)
@@ -173,9 +167,56 @@ class ContinuousFeaturesV2(FeatureExtractor):
         out['intercept'] = 1
         for k, v in state.iteritems():
             out[k, serializeList(action)] = v
-
         return out
 
+
+
+
+
+class ContinuousFeaturesV3(FeatureExtractor):
+    # this seems to work well with q-learning but not SARSA...
+    def __init__(self):
+        super(ContinuousFeaturesV3, self).__init__()
+        return
+    
+    def process_state(self, raw_state):
+        pos = raw_state['ball'].centerx - raw_state['paddle'].centerx
+        movement_dir = 'left' if raw_state['ball_vel'][0] < 0 else 'right' 
+        state['moving_%s' % (movement_dir)] = sigmoid(pos)
+        return state
+
+    def get_features(self, raw_state, action):
+        state = self.process_state(raw_state)
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+        return out
+
+
+
+
+class ContinuousFeaturesV4(FeatureExtractor):
+    # doesn't do to hot...i'm thinking it doesn't have enough training time...
+    def __init__(self):
+        super(ContinuousFeaturesV3, self).__init__()
+        return
+    
+    def process_state(self, raw_state):
+        state = defaultdict(int)
+        absolute_pos = discretizeLocation(raw_state['ball'].x, raw_state['ball'].y)
+        relative_pos = 'left' if raw_state['ball'].x < raw_state['paddle'].x else 'right'
+        movement_dir = 'left' if raw_state['ball_vel'][0] < 0 else 'right'
+        state['pos_%s_relative_%s_moving_%s' % (absolute_pos, relative_pos, movement_dir)] = 1
+        return state
+
+    def get_features(self, raw_state, action):
+        state = self.process_state(raw_state)
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+        return out
 
 
 
