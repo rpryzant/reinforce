@@ -322,7 +322,7 @@ class NNAgent(BaseAgent):
         self.getStepSize = stepSize
         self.numIters = 1
 
-        self.feature_len = 8
+        self.feature_len = 5
         self.input_placeholder, self.target_placeholder, self.loss, \
             self.train_step, self.sess, self.output, self.merged, self.log_writer = \
                                                     self.define_model(self.feature_len)
@@ -373,7 +373,6 @@ class NNAgent(BaseAgent):
             return
 
         cur_features = self.toFeatureVector(state, action)
-
         target = reward
 
         if newState['game_state'] != STATE_GAME_OVER:
@@ -460,6 +459,146 @@ class NNAgent(BaseAgent):
 
 
 
+
+class PolicyGradients(BaseAgent):
+    """Approximation using policy gradients
+    """
+    def __init__(self, featureExtractor, verbose, epsilon=0.5, gamma=0.993, stepSize=None):
+        self.featureExtractor = featureExtractor
+        self.verbose = verbose
+        self.explorationProb = epsilon
+        self.discount = gamma
+        self.getStepSize = stepSize
+        self.numIters = 1
+
+        self.H = 15               # num hidden layer units
+        self.D = 5                # input dimensionality
+        self.batch_size = 10
+        self.learning_rate = 1e-4
+        self.rms_prop_decay_rate = 0.99
+
+        self.model = {}
+        self.model['W1'] = np.random.randn(self.H, self.D) / np.sqrt(self.D)   # xavier initialization
+        self.model['W2'] = np.random.randn(self.H) / np.sqrt(self.H)
+
+        self.grad_buffer = {k: np.zeros_like(v) for k, v in self.model.iteritems()}  # buffer for adding up gradients over a batch
+        self.rmsprop_cache = {k: np.zeros_like(v) for k, v in self.model.iteritems()}  # rmsprop memory
+
+        self.xs = []
+        self.hs = []
+        self.dlogps = []
+        self.drs = []
+        self.running_reward = None
+        self.reward_sum = 0
+        self.episode_number = 0
+
+        self.feature_index = 0
+        self.feature_mapping = {}
+
+
+    def toFeatureVector(self, state, action):
+        """converts state/action pair to 1xN matrix for learning
+        """
+        features = self.featureExtractor.get_features(state, action)
+        return utils.dictToNpMatrix(features)
+
+    def __policy_forward(self, x):
+        h = np.dot(self.model['W1'], np.transpose(x))  # x is a row, we want columns
+        h[h<0] = 0 # ReLU
+        logp = np.dot(self.model['W2'], h)
+        p = utils.sigmoid(logp)
+        return p, h # return prob of taking action LEFT + hidden state
+
+    def __policy_backward(self, eph, epx, epdlogp):
+        dW2 = np.dot(eph.T, epdlogp).ravel()
+        dh = np.outer(epdlogp, self.model['W2'])
+        dh[eph <= 0] = 0 # backprop prelu
+        dW1 = np.dot(dh.T, epx)
+        return {'W1': dW1, 'W2': dW2}
+
+    def __discount_rewards(self, rewards):
+        discounted_r = np.zeros_like(rewards)
+        running_add = 0
+        for t in reversed(xrange(0, rewards.size)):
+            if rewards[t] != 0: running_add = 0 # reset sum at game boundary (TODO - REMOVE?) 
+            running_add = running_add * self.discount + rewards[t]
+            discounted_r[t] = running_add
+        return discounted_r
+
+    def takeAction(self, state):
+        """ samples an action from the distribution perscribed by policy network
+        """
+        # don't count ball in paddle as a real state
+        if state['game_state'] == STATE_BALL_IN_PADDLE:
+            return INPUT_SPACE
+
+        self.numIters += 1
+
+        x = self.toFeatureVector(state, INPUT_L)  # featurize state, convert to 1xN matrix
+
+        left_prob, h = self.__policy_forward(x) # get prob distribution from policy network
+        action = INPUT_L if random.random() < left_prob else INPUT_R # sample!
+
+        # record stuff for backprop
+        self.xs.append(x) # observations
+        self.hs.append(h.T) # hidden states  TODO - TRANSPOSES???
+        y = 1 if action == INPUT_L else 0 # fake label
+        self.dlogps.append(y - left_prob) # gradient that encourages action that was taken to be taken (http://cs231n.github.io/neural-networks-2/#losses)
+        print len(self.hs)
+        print len(self.dlogps)
+        return action
+
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        """perform NN Q-learning update
+        """
+       # no feedback at start of game (or ball in paddle)
+        if state == {} or self.numIters == 1:
+            return
+
+        self.reward_sum += reward
+        self.drs.append(reward) # record reward for previous action
+        # consider any "good" or "bad " thing happening an end-of-episode
+        #   TODO: change to end of game? 
+        if reward != 0:
+            self.episode_number += 1
+
+            # stack all the things we've been remembering for this episode
+            epx = np.vstack(self.xs)
+            eph = np.vstack(self.hs) 
+            epdlogp = np.vstack(self.dlogps)
+            epr = np.vstack(self.drs)
+            # reset memory
+            self.xs = []
+            self.hs = []
+            self.dlogps = []
+            self.drs = []
+
+            # compute discounted rewards back through time
+            discounted_epr = self.__discount_rewards(epr)
+            # standardize rewards
+            discounted_epr = np.add(discounted_epr, -np.mean(discounted_epr), casting='unsafe') # int/float
+            discounted_epr /= np.std(discounted_epr)
+            epdlogp *= discounted_epr # modulate gradient with advantage (PG!!)
+            print eph.shape
+            print epdlogp.shape
+            grad = self.__policy_backward(eph, epx, epdlogp)
+
+            for k in self.model: self.grad_buffer[k] += grad[k] # accumulate gradient over batch
+
+            # rmsprop parameter update every batch_size episodes
+            if self.episode_number % self.batch_size == 0:
+                for k, v in self.model.iteritems():
+                    g = self.grad_buffer[k]  # get gradient
+                    self.rmsprop_cache[k] = self.rms_prop_decay_rate * self.rmsprop_cache[k] + (1 - self.rms_prop_decay_rate) * g**2
+                    model[k] += learning_rate * g / (np.sqrt(self.rmsprop_cache[k]) + self.learning_rate)
+                    self.grad_buffer[k] = np.zeros_like(v) # reset batch gradient buffer
+
+            # moving average of reward (interpolate)
+            #   TODO - DO THIS INSTEAD OF CUMULATIVE REWARDS???
+            self.running_reward = self.reward_sum if self.running_reward is None else self.running_reward * 0.99 + self.reward_sum * 0.01
+            # reset episode total reward
+            self.reward_sum = 0
 
 
 
