@@ -40,6 +40,9 @@ class BaseAgent(object):
             return [[], [INPUT_L], [INPUT_R]]
 
     def read_model(self, path):
+        """reads model weights from file
+            works kind of like an inverse of str()
+        """
         print 'reading weights from %s...' % path
         model_str = open(path, 'r').read()
         model_str = re.sub("<type '", "", model_str)
@@ -51,6 +54,8 @@ class BaseAgent(object):
         return newWeights
 
     def write_model(self, path, model):
+        """writes a model to file
+        """
         print 'writing weights...'
         file = open(path, 'w')
         file.write(str(model))
@@ -71,6 +76,9 @@ class RLAgent(BaseAgent):
         self.getStepSize = stepSize
         self.numIters = 1
         self.weights = defaultdict(float)
+
+    def incorporateFeedback(self, state, action, reward, newState):
+        raise NotImplementedError("override this")
 
     def getQ(self, state, action, features=None):
         """ returns Q-value for s,a pair
@@ -95,20 +103,24 @@ class RLAgent(BaseAgent):
             return random.choice(scores)[1]
         return max(scores)[1]
 
-    # step size functions
-    @staticmethod
-    def constant(numIters):
-        return self.stepSize
-
     def setStepSize(self, size):
         self.stepSize = size
 
+    ####################################
+    # step size functions
+    @staticmethod
+    def constant(numIters):
+        """constant step size"""
+        return self.stepSize
+
     @staticmethod
     def inverse(numIters):
+        """1/x"""
         return 1.0 / numIters
 
     @staticmethod
     def inverseSqrt(numIters):
+        """1/sqrt(x)"""
         return 1.0 / math.sqrt(numIters)
 
     def copyWeights(self):
@@ -116,9 +128,6 @@ class RLAgent(BaseAgent):
 
     def write_model(self, path):
         super(RLAgent, self).write_model(path, self.weights)
-
-    def incorporateFeedback(self, state, action, reward, newState):
-        raise NotImplementedError("override this")
 
 
 

@@ -46,9 +46,6 @@ class SimpleDiscreteFeatureExtractor(FeatureExtractor):
         state['ball_y-'+str(int(raw_state['ball'].y) / grid_step)] = 1
         state['paddle_x-'+str(int(raw_state['paddle'].x) / grid_step)] = 1
         state['ball_angle-'+str( int(angle(raw_state['ball_vel']) / angle_step ))] = 1
-        # TODO - don't need these for now...took out to save time
-#        for brick in raw_state['bricks']:
-#            state['brick-('+str(brick.x)+','+str(brick.y)+')'] = 1
         return state
 
 
@@ -181,26 +178,6 @@ class ContinuousFeaturesV2(FeatureExtractor):
 
 
 
-class ContinuousFeaturesWithInteractions(ContinuousFeaturesV1):
-    """ TODO - underflows - not used"""
-    def __init__(self):
-        super(ContinuousFeaturesWithInteractions, self).__init__()
-        return
-
-
-    def get_features(self, raw_state, action):
-        state = super(ContinuousFeaturesWithInteractions, self).process_state(raw_state)
-
-        out = defaultdict(float)
-        out['intercept'] = 1
-        for k, v in state.iteritems():
-            out[k, serializeList(action)] = v
-
-        for k1, v1 in state.iteritems():
-            for k2, v2 in state.iteritems():
-                    out[k1 + '--' + k2, serializeList(action)] = v1 * v2
-        print out
-        return out
 
 
 

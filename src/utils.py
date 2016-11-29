@@ -63,24 +63,30 @@ def discretizeAngle(vec):
     return int(utils.angle(vec) / 10)
 
 def set_bit(bv, i):
+    """sets bit i of a bit vector"""
     return bv | (1 << i)
 
 def serializeBinaryVector(vec, use_bricks=False):
+    """serializes a binary sparse vector"""
     if use_bricks:
         return '|'.join(sorted(vec.keys()))
     else:
         return '|'.join(k for k in sorted(vec.keys()) if 'brick' not in k)
 
 def serializeList(l):
+    """serializes list"""
     return tuple(sorted(l))
 
 def deserializeAction(a):
+    """deserializes a list"""
     return list(a)
 
 def allSame(l):
+    """test if all elements of l are identical"""
     return all(x == l[0] for x in l)
 
 def dictToNpMatrix(d):
+    """converts python dict to np matrix"""
     return np.asmatrix([d[k] for k in sorted(d)])
 
 
