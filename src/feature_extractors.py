@@ -154,10 +154,19 @@ class ContinuousFeaturesV2(FeatureExtractor):
     
     def process_state(self, raw_state):
         state = defaultdict(int)
-        pos = raw_state['ball'].centerx - raw_state['paddle'].centerx
-        relative_pos = 'left' if raw_state['ball'].centerx < raw_state['paddle'].centerx else 'right'
-        movement_dir = 'left' if raw_state['ball_vel'][0] < 0 else 'right'
-        state['pos_%s_moving_%s' % (relative_pos, movement_dir)] = 1
+        # do this array assignment thing so that we can efficiently spit out complete feature 
+        #   vectors. We can't use sparse vectors for NN and policy gradient training, as 
+        #   these methods need to convert this feature vector into an np array
+        relative_pos = ['left', 'right'] if raw_state['ball'].centerx < raw_state['paddle'].centerx else ['right', 'left']
+        movement_dir = ['left', 'right'] if raw_state['ball_vel'][0] < 0 else ['right', 'left']
+
+        state['pos_%s_moving_%s' % (relative_pos[0], movement_dir[0])] = 1
+        state['pos_%s_moving_%s' % (relative_pos[1], movement_dir[0])] = 0
+        state['pos_%s_moving_%s' % (relative_pos[0], movement_dir[1])] = 0
+        state['pos_%s_moving_%s' % (relative_pos[1], movement_dir[1])] = 0
+
+
+
         return state
 
     def get_features(self, raw_state, action):
