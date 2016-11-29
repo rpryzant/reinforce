@@ -89,12 +89,11 @@ def main(args, parser):
     # # # # # # # # # test bed for experimental features # # # # # # # # # # # #
     ############################################################################    
     elif args.p == 'test':
-#        fe = ft_extract.SanityCheckFeatures()
-        fe = ft_extract.SimpleContinuousFeatureExtractor()
-#        fa = fn_approx.LinearReplayMemory(fe, memory_size=5000, replay_sample_size=1, num_static_target_steps=2000)
-#        fa = fn_approx.LinearFunctionApproximator(fe)
-        agent = agents.QLearningReplayMemory(fe)
-#        agent = agents.FuncApproxQLearningAgent(fa)
+        fe = ft_extract.ContinuousFeaturesV2()
+        agent = agents.PolicyGradients(fe, args.v,
+                               epsilon=EXPLORATION_PROB,
+                               gamma=DISCOUNT,
+                               stepSize=0.001)  
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
 
