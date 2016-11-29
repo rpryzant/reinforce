@@ -373,10 +373,6 @@ class BotControlledBreakout(Breakout):
             print '\tGames: %s' % self.batches
             print '\tMean score: %s' % (cumulative_score * 1.0 / self.batches)
             print '\tMean time: %s' % (cumulative_time * 1.0 / self.batches)
-#        elif self.csv:
-#            print '\nFINAL STATS:'
-#            print 'cum_score,cum_time,mean_score,mean_time'
-#            print '%s,%s,%s,%s' % (cumulative_score, cumulative_time, (cumulative_score * 1.0 / self.batches), (cumulative_time * 1.0 / self.batches))
 
         self.take_input([INPUT_QUIT])
 
