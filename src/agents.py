@@ -470,6 +470,7 @@ class PolicyGradients(BaseAgent):
         self.discount = gamma
         self.getStepSize = stepSize
         self.numIters = 1
+        self.gameIters = 1
 
         self.H = 15               # num hidden layer units
         self.D = 5                # input dimensionality
@@ -479,9 +480,11 @@ class PolicyGradients(BaseAgent):
 
         self.model = {}
         self.model['W1'] = np.random.randn(self.H, self.D) / np.sqrt(self.D)   # xavier initialization
-        self.model['W2'] = np.random.randn(self.H) / np.sqrt(self.H)
+        # 1xN matrix so that dimensions can agree during updates 
+        self.model['W2'] = np.asmatrix(np.random.randn(self.H) / np.sqrt(self.H))
 
-        self.grad_buffer = {k: np.zeros_like(v) for k, v in self.model.iteritems()}  # buffer for adding up gradients over a batch
+        # make grad buffer 1xN matrix so that dimension agrees with result of __policy_backward()
+        self.grad_buffer = {k: np.asmatrix(np.zeros_like(v)) for k, v in self.model.iteritems()}  # buffer for adding up gradients over a batch
         self.rmsprop_cache = {k: np.zeros_like(v) for k, v in self.model.iteritems()}  # rmsprop memory
 
         self.xs = []
@@ -533,6 +536,7 @@ class PolicyGradients(BaseAgent):
             return INPUT_SPACE
 
         self.numIters += 1
+        self.gameIters += 1
 
         x = self.toFeatureVector(state, INPUT_L)  # featurize state, convert to 1xN matrix
 
@@ -544,8 +548,7 @@ class PolicyGradients(BaseAgent):
         self.hs.append(h.T) # hidden states  TODO - TRANSPOSES???
         y = 1 if action == INPUT_L else 0 # fake label
         self.dlogps.append(y - left_prob) # gradient that encourages action that was taken to be taken (http://cs231n.github.io/neural-networks-2/#losses)
-        print len(self.hs)
-        print len(self.dlogps)
+
         return action
 
 
@@ -553,7 +556,9 @@ class PolicyGradients(BaseAgent):
         """perform NN Q-learning update
         """
        # no feedback at start of game (or ball in paddle)
-        if state == {} or self.numIters == 1:
+        if state == {} or self.gameIters == 1 or state['game_state'] == STATE_BALL_IN_PADDLE:
+            if state['game_state'] == STATE_BALL_IN_PADDLE:
+                self.gameIters = 1
             return
 
         self.reward_sum += reward
@@ -579,19 +584,19 @@ class PolicyGradients(BaseAgent):
             # standardize rewards
             discounted_epr = np.add(discounted_epr, -np.mean(discounted_epr), casting='unsafe') # int/float
             discounted_epr /= np.std(discounted_epr)
+
             epdlogp *= discounted_epr # modulate gradient with advantage (PG!!)
-            print eph.shape
-            print epdlogp.shape
             grad = self.__policy_backward(eph, epx, epdlogp)
 
-            for k in self.model: self.grad_buffer[k] += grad[k] # accumulate gradient over batch
+            for k in self.model: 
+                self.grad_buffer[k] += grad[k] # accumulate gradient over batch
 
             # rmsprop parameter update every batch_size episodes
             if self.episode_number % self.batch_size == 0:
                 for k, v in self.model.iteritems():
                     g = self.grad_buffer[k]  # get gradient
-                    self.rmsprop_cache[k] = self.rms_prop_decay_rate * self.rmsprop_cache[k] + (1 - self.rms_prop_decay_rate) * g**2
-                    model[k] += learning_rate * g / (np.sqrt(self.rmsprop_cache[k]) + self.learning_rate)
+                    self.rmsprop_cache[k] = self.rms_prop_decay_rate * self.rmsprop_cache[k] + (1 - self.rms_prop_decay_rate) * np.square(g)
+                    self.model[k] += self.learning_rate * np.asmatrix(g) / (np.sqrt(self.rmsprop_cache[k]) + self.learning_rate)
                     self.grad_buffer[k] = np.zeros_like(v) # reset batch gradient buffer
 
             # moving average of reward (interpolate)
