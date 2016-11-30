@@ -487,7 +487,7 @@ class PolicyGradients(BaseAgent):
         # 1xN matrix so that dimensions can agree during updates 
         self.model['W2'] = np.asmatrix(np.random.randn(self.hidden_units) / np.sqrt(self.hidden_units))   # xavier initialization
 
-        # make grad buffer 1xN matrix so that dimension agrees with result of policy_network_backprop()
+        # make grad buffer 1xN matrix so that dimension agrees with result of get_network_gradients()
         # buffer for adding up gradients over a batch
         self.batch_grad_buffer = {k: np.asmatrix(np.zeros_like(v)) for k, v in self.model.iteritems()}  
         # rmsprop memory
@@ -496,7 +496,7 @@ class PolicyGradients(BaseAgent):
         # memory devices for accumulating information in between epsodes (reward events)
         self.observations_buffer = []       # history of observed states
         self.hidden_states_buffer = []      # history of hidden state activations
-        self.diff_log_prob_buffer = []      # history of losses 
+        self.losses_buffer = []      # history of losses 
         self.rewards_buffer = []            # history of rewards
 
         # how many episodes (periods of gameplay in between rewards) have occured?
@@ -523,21 +523,31 @@ class PolicyGradients(BaseAgent):
         p_left = utils.sigmoid(p_left)
         return p_left, h
 
-    def policy_network_backprop(self, eph, epx, epdlogp):
-        dW2 = np.dot(eph.T, epdlogp).ravel()
-        dh = np.outer(epdlogp, self.model['W2'])
-        dh[eph <= 0] = 0 # backprop prelu
-        dW1 = np.dot(dh.T, epx)
+    def get_network_gradients(self, stacked_hidden_states, stacked_observations, stacked_losses):
+        """Use a history of a complete game episode (observations, activations (hidden states), losses) to 
+            calculate a gradient
+
+            TODO -- gradients blow up? nan?
+        """
+        dW2 = np.dot(stacked_hidden_states.T, stacked_losses).ravel() # flatten with ravel
+        dh = np.outer(stacked_losses, self.model['W2'])
+        dh[stacked_hidden_states <= 0] = 0 # backprop prelu
+        dW1 = np.dot(dh.T, stacked_observations)
         return {'W1': dW1, 'W2': dW2}
 
-    def calc_discounted_rewards(self, rewards):
-        discounted_reward = np.zeros_like(rewards)
+    def calc_discounted_rewards(self, stacked_rewards):
+        """Given the reward history of an episode, calculate discounted
+             sum of rewards for each moment in time
+
+            r_discounted[t] = r[t] + gamma * r[t-1] + gamma^2 * r[t-2] + ...
+        """
+        discounted_reward = np.zeros_like(stacked_rewards)
         tmp_reward = 0
-        for t in reversed(xrange(0, rewards.size)):
+        for t in reversed(xrange(0, stacked_rewards.size)):
             # TODO - THINK ABOUT THIS
-#            if rewards[t] != 0: 
+#            if stacked_rewards[t] != 0: 
 #                running_add = 0 # reset sum at game boundary (TODO - REMOVE?) 
-            tmp_reward = tmp_reward * self.discount + rewards[t]
+            tmp_reward = tmp_reward * self.discount + stacked_rewards[t]
             discounted_reward[t] = tmp_reward
         return discounted_reward
 
@@ -551,16 +561,20 @@ class PolicyGradients(BaseAgent):
         self.numIters += 1
         self.gameIters += 1
 
-        x = self.toFeatureVector(state, INPUT_L)  # featurize state, convert to 1xN matrix
+        # featurize state, convert to 1xN matrix
+        x = self.toFeatureVector(state, INPUT_L)
 
-        left_prob, h = self.policy_network_forward_pass(x) # get prob distribution from policy network
-        action = INPUT_L if random.random() < left_prob else INPUT_R # sample!
+        # ask policy network for action distribution and sample from it
+        left_prob, h = self.policy_network_forward_pass(x)
+        action = INPUT_L if random.random() < left_prob else INPUT_R
 
-        # record stuff for backprop
-        self.observations_buffer.append(x) # observations_buffer
-        self.hidden_states_buffer.append(h.T) # hidden states  TODO - TRANSPOSES???
-        y = 1 if action == INPUT_L else 0 # fake label
-        self.diff_log_prob_buffer.append(y - left_prob) # gradient that encourages action that was taken to be taken (http://cs231n.github.io/neural-networks-2/#losses)
+        # record stuff into memory of this episode
+        self.observations_buffer.append(x) 
+        self.hidden_states_buffer.append(h.T) # h is a column. remember it as a row so that it stacks nicely
+
+        # calculate "fake" loss that encourages action that was taken to be taken in the future
+        y = 1 if action == INPUT_L else 0
+        self.losses_buffer.append(y - left_prob) 
 
         return action
 
@@ -576,41 +590,52 @@ class PolicyGradients(BaseAgent):
 
         self.cumulative_reward += reward
         self.rewards_buffer.append(reward) # record reward for previous action
-        # consider any "good" or "bad " thing happening an end-of-episode
-        #   TODO: change to end of game? 
+
+        # consider any reward event as an end-of-episode
+        #   TODO - try out paddle death?
         if reward != 0:
             self.episode_number += 1
 
             # stack all the things we've been remembering for this episode
-            epx = np.vstack(self.observations_buffer)
-            eph = np.vstack(self.hidden_states_buffer) 
-            epdlogp = np.vstack(self.diff_log_prob_buffer)
-            epr = np.vstack(self.rewards_buffer)
+            stacked_observations = np.vstack(self.observations_buffer)
+            stacked_hidden_states = np.vstack(self.hidden_states_buffer) 
+            stacked_losses = np.vstack(self.losses_buffer)
+            stacked_rewards = np.vstack(self.rewards_buffer)
             # reset memory
             self.observations_buffer = []
             self.hidden_states_buffer = []
-            self.diff_log_prob_buffer = []
+            self.losses_buffer = []
             self.rewards_buffer = []
 
             # compute discounted rewards back through time
-            discounted_epr = self.calc_discounted_rewards(epr)
-            # standardize rewards
-            discounted_epr = np.add(discounted_epr, -np.mean(discounted_epr), casting='unsafe') # int/float
-            discounted_epr /= np.std(discounted_epr)
+            discounted_stacked_rewards = self.calc_discounted_rewards(stacked_rewards)
+            # TODO: standardize rewards? (half actions should be good, half should be bad)
+#            discounted_stacked_rewards = np.add(discounted_stacked_rewards, -np.mean(discounted_stacked_rewards), casting='unsafe') # unsafe casting for int/float
+#            discounted_stacked_rewards /= np.std(discounted_stacked_rewards)
 
-            epdlogp *= discounted_epr # modulate gradient with advantage (PG!!)
-            grad = self.policy_network_backprop(eph, epx, epdlogp)
+            # Modulate losses (and thus gradient) with our history of the rewards.
+            # This inflates elements with a large reward, thereby growing the gradient in that direction as well.
+            # The opposite goes for negative rewards. 
+            # The special spice behind policy gradients is right here
+            stacked_losses *= discounted_stacked_rewards 
 
+            # get gradients
+            grad = self.get_network_gradients(stacked_hidden_states, stacked_observations, stacked_losses)
+
+            # accumulate gradients (will be used at the end of each batch)
             for k in self.model: 
-                self.batch_grad_buffer[k] += grad[k] # accumulate gradient over batch
+                self.batch_grad_buffer[k] += grad[k]
 
-            # rmsprop parameter update every batch_size episodes
+            # rmsprop parameter update when batches are done
             if self.episode_number % self.batch_size == 0:
                 for k, v in self.model.iteritems():
-                    g = self.batch_grad_buffer[k]  # get gradient
+                    g = self.batch_grad_buffer[k]  # get gradient for this layer
+                    # rmsprop update: http://sebastianruder.com/optimizing-gradient-descent/index.html#rmsprop 
+                    # also            http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf
                     self.rmsprop_grad_history[k] = self.rmsprop_decay * self.rmsprop_grad_history[k] + (1 - self.rmsprop_decay) * np.square(g)
                     self.model[k] += self.learning_rate * np.asmatrix(g) / (np.sqrt(self.rmsprop_grad_history[k]) + self.learning_rate)
-                    self.batch_grad_buffer[k] = np.zeros_like(v) # reset batch gradient buffer
+                    # reset batch gradient memory
+                    self.batch_grad_buffer[k] = np.zeros_like(v)
 
             # moving average of reward (interpolate)
             #   TODO - DO THIS INSTEAD OF CUMULATIVE REWARDS???
