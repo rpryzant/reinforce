@@ -470,34 +470,41 @@ class PolicyGradients(BaseAgent):
         self.discount = gamma
         self.getStepSize = stepSize
         self.numIters = 1
+
+        # used to ignore iterations where STATE_BALL_IN_PADDLE
         self.gameIters = 1
 
-        self.H = 15               # num hidden layer units
-        self.D = 5                # input dimensionality
-        self.batch_size = 10
-        self.learning_rate = 1e-4
-        self.rms_prop_decay_rate = 0.99
+        self.hidden_units = 15               # num hidden layer units
+        self.input_dim = 5                   # input dimensionality
+        self.batch_size = 10                 # num reward events (episodes) to process before actually applying gradient update
+        self.learning_rate = 1e-4            # learning rate for rmsprop
+        self.rmsprop_decay = 0.9             # rmrprop decay rate
 
+        # init 2-layer neural net for policy network 
+        # this is small but it's easy to scale up when we have things working. Plus, our input dimension is pretty damn small
         self.model = {}
-        self.model['W1'] = np.random.randn(self.H, self.D) / np.sqrt(self.D)   # xavier initialization
+        self.model['W1'] = np.random.randn(self.hidden_units, self.input_dim) / np.sqrt(self.input_dim)   # xavier initialization
         # 1xN matrix so that dimensions can agree during updates 
-        self.model['W2'] = np.asmatrix(np.random.randn(self.H) / np.sqrt(self.H))
+        self.model['W2'] = np.asmatrix(np.random.randn(self.hidden_units) / np.sqrt(self.hidden_units))   # xavier initialization
 
-        # make grad buffer 1xN matrix so that dimension agrees with result of __policy_backward()
-        self.grad_buffer = {k: np.asmatrix(np.zeros_like(v)) for k, v in self.model.iteritems()}  # buffer for adding up gradients over a batch
-        self.rmsprop_cache = {k: np.zeros_like(v) for k, v in self.model.iteritems()}  # rmsprop memory
+        # make grad buffer 1xN matrix so that dimension agrees with result of policy_network_backprop()
+        # buffer for adding up gradients over a batch
+        self.batch_grad_buffer = {k: np.asmatrix(np.zeros_like(v)) for k, v in self.model.iteritems()}  
+        # rmsprop memory
+        self.rmsprop_grad_history = {k: np.zeros_like(v) for k, v in self.model.iteritems()}  
 
-        self.xs = []
-        self.hs = []
-        self.dlogps = []
-        self.drs = []
-        self.running_reward = None
-        self.reward_sum = 0
+        # memory devices for accumulating information in between epsodes (reward events)
+        self.observations_buffer = []       # history of observed states
+        self.hidden_states_buffer = []      # history of hidden state activations
+        self.diff_log_prob_buffer = []      # history of losses 
+        self.rewards_buffer = []            # history of rewards
+
+        # how many episodes (periods of gameplay in between rewards) have occured?
         self.episode_number = 0
 
-        self.feature_index = 0
-        self.feature_mapping = {}
-
+        # reward bookeeping stuff
+        self.running_reward = None
+        self.cumulative_reward = 0
 
     def toFeatureVector(self, state, action):
         """converts state/action pair to 1xN matrix for learning
@@ -505,28 +512,34 @@ class PolicyGradients(BaseAgent):
         features = self.featureExtractor.get_features(state, action)
         return utils.dictToNpMatrix(features)
 
-    def __policy_forward(self, x):
-        h = np.dot(self.model['W1'], np.transpose(x))  # x is a row, we want columns
-        h[h<0] = 0 # ReLU
-        logp = np.dot(self.model['W2'], h)
-        p = utils.sigmoid(logp)
-        return p, h # return prob of taking action LEFT + hidden state
+    def policy_network_forward_pass(self, x):
+        """Computes forward pass of the policy network.
+            Policy network spits out a softmax over possible actions (i.e. P(going  left) )
+            Network also uses relu activations in hidden layer
+        """
+        h = np.dot(self.model['W1'], x.T)  # W1 is a row but x is also a row. we want a column so transpose
+        h[h<0] = 0 # relu on hidden state
+        p_left = np.dot(self.model['W2'], h)  
+        p_left = utils.sigmoid(p_left)
+        return p_left, h
 
-    def __policy_backward(self, eph, epx, epdlogp):
+    def policy_network_backprop(self, eph, epx, epdlogp):
         dW2 = np.dot(eph.T, epdlogp).ravel()
         dh = np.outer(epdlogp, self.model['W2'])
         dh[eph <= 0] = 0 # backprop prelu
         dW1 = np.dot(dh.T, epx)
         return {'W1': dW1, 'W2': dW2}
 
-    def __discount_rewards(self, rewards):
-        discounted_r = np.zeros_like(rewards)
-        running_add = 0
+    def calc_discounted_rewards(self, rewards):
+        discounted_reward = np.zeros_like(rewards)
+        tmp_reward = 0
         for t in reversed(xrange(0, rewards.size)):
-            if rewards[t] != 0: running_add = 0 # reset sum at game boundary (TODO - REMOVE?) 
-            running_add = running_add * self.discount + rewards[t]
-            discounted_r[t] = running_add
-        return discounted_r
+            # TODO - THINK ABOUT THIS
+#            if rewards[t] != 0: 
+#                running_add = 0 # reset sum at game boundary (TODO - REMOVE?) 
+            tmp_reward = tmp_reward * self.discount + rewards[t]
+            discounted_reward[t] = tmp_reward
+        return discounted_reward
 
     def takeAction(self, state):
         """ samples an action from the distribution perscribed by policy network
@@ -540,14 +553,14 @@ class PolicyGradients(BaseAgent):
 
         x = self.toFeatureVector(state, INPUT_L)  # featurize state, convert to 1xN matrix
 
-        left_prob, h = self.__policy_forward(x) # get prob distribution from policy network
+        left_prob, h = self.policy_network_forward_pass(x) # get prob distribution from policy network
         action = INPUT_L if random.random() < left_prob else INPUT_R # sample!
 
         # record stuff for backprop
-        self.xs.append(x) # observations
-        self.hs.append(h.T) # hidden states  TODO - TRANSPOSES???
+        self.observations_buffer.append(x) # observations_buffer
+        self.hidden_states_buffer.append(h.T) # hidden states  TODO - TRANSPOSES???
         y = 1 if action == INPUT_L else 0 # fake label
-        self.dlogps.append(y - left_prob) # gradient that encourages action that was taken to be taken (http://cs231n.github.io/neural-networks-2/#losses)
+        self.diff_log_prob_buffer.append(y - left_prob) # gradient that encourages action that was taken to be taken (http://cs231n.github.io/neural-networks-2/#losses)
 
         return action
 
@@ -561,49 +574,49 @@ class PolicyGradients(BaseAgent):
                 self.gameIters = 1
             return
 
-        self.reward_sum += reward
-        self.drs.append(reward) # record reward for previous action
+        self.cumulative_reward += reward
+        self.rewards_buffer.append(reward) # record reward for previous action
         # consider any "good" or "bad " thing happening an end-of-episode
         #   TODO: change to end of game? 
         if reward != 0:
             self.episode_number += 1
 
             # stack all the things we've been remembering for this episode
-            epx = np.vstack(self.xs)
-            eph = np.vstack(self.hs) 
-            epdlogp = np.vstack(self.dlogps)
-            epr = np.vstack(self.drs)
+            epx = np.vstack(self.observations_buffer)
+            eph = np.vstack(self.hidden_states_buffer) 
+            epdlogp = np.vstack(self.diff_log_prob_buffer)
+            epr = np.vstack(self.rewards_buffer)
             # reset memory
-            self.xs = []
-            self.hs = []
-            self.dlogps = []
-            self.drs = []
+            self.observations_buffer = []
+            self.hidden_states_buffer = []
+            self.diff_log_prob_buffer = []
+            self.rewards_buffer = []
 
             # compute discounted rewards back through time
-            discounted_epr = self.__discount_rewards(epr)
+            discounted_epr = self.calc_discounted_rewards(epr)
             # standardize rewards
             discounted_epr = np.add(discounted_epr, -np.mean(discounted_epr), casting='unsafe') # int/float
             discounted_epr /= np.std(discounted_epr)
 
             epdlogp *= discounted_epr # modulate gradient with advantage (PG!!)
-            grad = self.__policy_backward(eph, epx, epdlogp)
+            grad = self.policy_network_backprop(eph, epx, epdlogp)
 
             for k in self.model: 
-                self.grad_buffer[k] += grad[k] # accumulate gradient over batch
+                self.batch_grad_buffer[k] += grad[k] # accumulate gradient over batch
 
             # rmsprop parameter update every batch_size episodes
             if self.episode_number % self.batch_size == 0:
                 for k, v in self.model.iteritems():
-                    g = self.grad_buffer[k]  # get gradient
-                    self.rmsprop_cache[k] = self.rms_prop_decay_rate * self.rmsprop_cache[k] + (1 - self.rms_prop_decay_rate) * np.square(g)
-                    self.model[k] += self.learning_rate * np.asmatrix(g) / (np.sqrt(self.rmsprop_cache[k]) + self.learning_rate)
-                    self.grad_buffer[k] = np.zeros_like(v) # reset batch gradient buffer
+                    g = self.batch_grad_buffer[k]  # get gradient
+                    self.rmsprop_grad_history[k] = self.rmsprop_decay * self.rmsprop_grad_history[k] + (1 - self.rmsprop_decay) * np.square(g)
+                    self.model[k] += self.learning_rate * np.asmatrix(g) / (np.sqrt(self.rmsprop_grad_history[k]) + self.learning_rate)
+                    self.batch_grad_buffer[k] = np.zeros_like(v) # reset batch gradient buffer
 
             # moving average of reward (interpolate)
             #   TODO - DO THIS INSTEAD OF CUMULATIVE REWARDS???
-            self.running_reward = self.reward_sum if self.running_reward is None else self.running_reward * 0.99 + self.reward_sum * 0.01
+            self.running_reward = self.cumulative_reward if self.running_reward is None else self.running_reward * 0.99 + self.cumulative_reward * 0.01
             # reset episode total reward
-            self.reward_sum = 0
+            self.cumulative_reward = 0
 
 
 
