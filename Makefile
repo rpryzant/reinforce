@@ -12,5 +12,5 @@ test:
 	./test_scripts/benchmark.sh
 
 
-cumulativeFig:
-	./test_scripts/make_cumulative_plots.sh
+cumulative:
+	python test_scripts/cumulative_plot.py

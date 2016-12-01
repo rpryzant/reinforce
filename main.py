@@ -84,6 +84,15 @@ def main(args, parser):
                                stepSize=0.001)        
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
+    elif args.p == 'policyGradients':
+        fe = ft_extract.ContinuousFeaturesV2()
+        agent = agents.PolicyGradients(fe, args.v,
+                               epsilon=EXPLORATION_PROB,
+                               gamma=DISCOUNT,
+                               stepSize=0.001)  
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+
+
 
     ############################################################################
     # # # # # # # # # test bed for experimental features # # # # # # # # # # # #

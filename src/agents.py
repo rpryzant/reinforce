@@ -670,9 +670,9 @@ class DiscreteQLearning(BaseAgent):
             return random.choice(actions)
 
         state = DiscreteFeaturizer.process_state(state)
-        state = serializeBinaryVector(state)
+        state = utils.serializeBinaryVector(state)
 
-        scores = [(self.Q_values[state][serializeList(action)], action) for action in actions]
+        scores = [(self.Q_values[state][utils.serializeList(action)], action) for action in actions]
         # break ties with random movement
         if utils.allSame([x[0] for x in scores]):
             return random.choice(scores)[1]
@@ -686,10 +686,10 @@ class DiscreteQLearning(BaseAgent):
         state = DiscreteFeaturizer.process_state(state)
         newState = DiscreteFeaturizer.process_state(newState)
 
-        serialized_state = serializeBinaryVector(state)
-        serialized_action = serializeList(action)
-        serialized_newSate = serializeBinaryVector(newState)
-        serialized_opt_action = serializeList(self.get_opt_action(newState))
+        serialized_state = utils.serializeBinaryVector(state)
+        serialized_action = utils.serializeList(action)
+        serialized_newSate = utils.serializeBinaryVector(newState)
+        serialized_opt_action = utils.serializeList(self.get_opt_action(newState))
 
         prediction = self.Q_values[serialized_state][serialized_action]
         target = reward + self.gamma * self.Q_values[serialized_newSate][serialized_opt_action]
@@ -701,14 +701,14 @@ class DiscreteQLearning(BaseAgent):
     def get_opt_action(self, state):
         """gets the optimal action for current state using current Q values
         """ 
-        serialized_state = serializeBinaryVector(state)
+        serialized_state = utils.serializeBinaryVector(state)
         max_action = []
         max_value = -float('infinity')
 
         for serialized_action in self.Q_values[serialized_state].keys():
             if self.Q_values[serialized_state][serialized_action] > max_value :
                 max_value = self.Q_values[serialized_state][serialized_action]
-                max_action = deserializeAction(serialized_action)
+                max_action = utils.deserializeAction(serialized_action)
         return max_action
 
 
