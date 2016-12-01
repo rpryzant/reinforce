@@ -26,3 +26,6 @@ for cmd in tqdm(commands):
 
 # and last but not least...generate the damn plot
 os.system("RScript test_scripts/generate_cumulative_plot.R")
+
+# actually last and probably least...clean up
+os.system("rm *.csv")
