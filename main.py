@@ -61,7 +61,7 @@ def main(args, parser):
     elif args.p == 'sarsa':
         fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.SARSA(fe,
-                             EPSILON=EXPLORATION_PROB,
+                             epsilon=EXPLORATION_PROB,
                              gamma=DISCOUNT,
                              stepSize=agents.RLAgent.inverse)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)

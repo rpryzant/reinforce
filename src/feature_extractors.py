@@ -228,7 +228,62 @@ class ContinuousFeaturesV4(FeatureExtractor):
         return out
 
 
+class ContinuousFeaturesV5(FeatureExtractor):
+    # complete feature set intended for neurlan net
+    def __init__(self):
+        super(ContinuousFeaturesV5, self).__init__()
+        return
+    
+    def get_dist(self, brick, ball):
+        ball_x = (ball.x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0]
+        brick_x = brick.x / SCREEN_SIZE[0]
+        ball_y = (ball.y + BALL_RADIUS)*1.0 / SCREEN_SIZE[1]
+        brick_y = brick.y / SCREEN_SIZE[1]
+        return math.sqrt((brick_x - ball_x)**2 + (brick_y - ball_y)**2)
+
+    def process_state(self, raw_state):
+        state = defaultdict(int)
+        state['ball-x'] = (raw_state['ball'].x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] 
+        state['ball-y'] = (raw_state['ball'].y - BALL_RADIUS)*1.0 / SCREEN_SIZE[1]
+        state['paddle-x'] = (raw_state['paddle'].x + PADDLE_WIDTH/2)*1.0 / SCREEN_SIZE[0] 
+        state['ball-paddle-x'] = (raw_state['ball'].x + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] -  (raw_state['paddle'].x + PADDLE_WIDTH/2)*1.0 / SCREEN_SIZE[0]  #+ 2*raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+        state['ball-paddle-y'] = (raw_state['ball'].y + BALL_RADIUS)*1.0 / SCREEN_SIZE[0] -  (raw_state['paddle'].y + PADDLE_HEIGHT/2)*1.0 / SCREEN_SIZE[0]  
+        state['ball-vel-x'] = raw_state['ball_vel'][0] *1.0/ SCREEN_SIZE[0]
+        state['angle = '] = angle(raw_state['ball_vel'])*1.0 / 180
+        state['ball-vel-y'] = raw_state['ball_vel'][1]*1.0/ SCREEN_SIZE[1]
+        state['ball-dist-from-right-wall'] = (SCREEN_SIZE[0] - (raw_state['ball'].x + BALL_RADIUS)*1.0)/SCREEN_SIZE[0]
+        state['ball-dist-from-top-wall'] = (SCREEN_SIZE[1] - (raw_state['ball'].y + BALL_RADIUS)*1.0)/SCREEN_SIZE[1]
+        return state
+
+    def get_features(self, raw_state, action):
+        state = self.process_state(raw_state)
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+        return out    
 
 
+class ContinuousFeaturesV6(FeatureExtractor):
+    # left/right up/down relative pos featureset....doesn't seem to help either
+    def __init__(self):
+        super(ContinuousFeaturesV6, self).__init__()
+        return
+    
+    def process_state(self, raw_state):
+        state = defaultdict(int)
+        is_left = "left" if raw_state['ball'].x < raw_state['paddle'].x else "right"
+        moving_left = "left" if raw_state['ball_vel'][0] < 0 else "right"
+        moving_down = "down" if raw_state['ball_vel'][1] < 0 else "up"
+        state["ball_%s_moving_%s_%s" % (is_left, moving_left, moving_down)]
+        return state
+
+    def get_features(self, raw_state, action):
+        state = self.process_state(raw_state)
+        out = defaultdict(float)
+        out['intercept'] = 1
+        for k, v in state.iteritems():
+            out[k, serializeList(action)] = v
+        return out
 
 
