@@ -15,7 +15,7 @@ command = "python %s -p %s -b %s -csv > %s-%s.csv"
 processes = set()
 
 # throw all commands in a list for tqdm
-commands = [command % (main_loc, player, games, player, i) for player in players for i in range(runs)]
+commands = [command % (main_loc, player, games, player, i) for player in players for i in range(1, runs+1)]
 
 # run em all!
 for cmd in tqdm(commands):
