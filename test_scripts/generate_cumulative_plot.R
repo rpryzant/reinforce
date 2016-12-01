@@ -2,7 +2,8 @@
 # SET YOUR OWN WD TO THIS DIRECTORY
 
 # set wd
-setwd(system("pwd", intern = T) )
+cur_dir = system("pwd", intern = T)
+setwd(cur_dir)
 getwd()
 
 
@@ -34,8 +35,8 @@ simpleQLearning = cbind(
   simpleQLearning.6$cum_score,
   simpleQLearning.7$cum_score,
   simpleQLearning.8$cum_score,
-  simpleQLearning.9$cum_score,
-  simpleQLearning.10$cum_score
+  simpleQLearning.9$cum_score
+  #simpleQLearning.10$cum_score
 )
 linearQ = cbind(
     linearQ.1$cum_score,
@@ -46,8 +47,8 @@ linearQ = cbind(
     linearQ.6$cum_score,
     linearQ.7$cum_score,
     linearQ.8$cum_score,
-    linearQ.9$cum_score,
-    linearQ.10$cum_score
+    linearQ.9$cum_score
+    #linearQ.10$cum_score
     )
 linearReplayQ = cbind(
     linearReplayQ.1$cum_score,
@@ -58,8 +59,8 @@ linearReplayQ = cbind(
     linearReplayQ.6$cum_score,
     linearReplayQ.7$cum_score,
     linearReplayQ.8$cum_score,
-    linearReplayQ.9$cum_score,
-    linearReplayQ.10$cum_score
+    linearReplayQ.9$cum_score
+    #linearReplayQ.10$cum_score
     )
 sarsa = cbind(
   sarsa.1$cum_score,
@@ -70,8 +71,8 @@ sarsa = cbind(
   sarsa.6$cum_score,
   sarsa.7$cum_score,
   sarsa.8$cum_score,
-  sarsa.9$cum_score,
-  sarsa.10$cum_score
+  sarsa.9$cum_score
+  #sarsa.10$cum_score
 )
 sarsaLambda = cbind(
     sarsaLambda.1$cum_score,
@@ -82,8 +83,8 @@ sarsaLambda = cbind(
     sarsaLambda.6$cum_score,
     sarsaLambda.7$cum_score,
     sarsaLambda.8$cum_score,
-    sarsaLambda.9$cum_score,
-    sarsaLambda.10$cum_score
+    sarsaLambda.9$cum_score
+    #sarsaLambda.10$cum_score
     )
 nn = cbind(
     nn.1$cum_score,
@@ -93,8 +94,8 @@ nn = cbind(
     nn.6$cum_score,
     nn.7$cum_score,
     nn.8$cum_score,
-    nn.9$cum_score,
-    nn.10$cum_score
+    nn.9$cum_score
+    #nn.10$cum_score
     )
 policyGradients = cbind(
   policyGradients.1$cum_score,
@@ -104,8 +105,8 @@ policyGradients = cbind(
   policyGradients.6$cum_score,
   policyGradients.7$cum_score,
   policyGradients.8$cum_score,
-  policyGradients.9$cum_score,
-  policyGradients.10$cum_score
+  policyGradients.9$cum_score
+  #policyGradients.10$cum_score
 )
 
 
@@ -119,7 +120,7 @@ cum.score.totals = cbind(
   nn[2000,], 
   policyGradients[2000,]
 )
-plt.las = 2
+plt.las = 0
 plt.names = c(
   "random",
   "simple Q",
@@ -131,7 +132,15 @@ plt.names = c(
   "policy gradients"
 )
 
-boxplot(cum.score.totals, las=plt.las, names=plt.names)
+png(filename=paste(cur_dir, "/performance.png", sep=""), width=1000, height=750)
+#dev.new(width=5, height=4)
+boxplot(cum.score.totals, las=plt.las, names=plt.names, log="y", main="Relative Agent Performance over 20k Games",
+        ylab="log cumulative points", xlab="agent")
+dev.off()
+
+
+
+
 
 # if you want a line plot, take row means of each above data frame and run this
 #plot(random, type="l", main="relative performance of differet agents",ylab="mean cumulative points across 10 runs", xlab="games",ylim=c(0, 6500))

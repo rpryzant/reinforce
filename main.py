@@ -77,6 +77,8 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'nn':
+        # TODO - FEED IN CONTINUOUS/RAW DATA
+        #         might not help as much because already has higher level features
         fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.NNAgent(fe, args.v,
                                epsilon=EXPLORATION_PROB,
@@ -85,6 +87,11 @@ def main(args, parser):
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'policyGradients':
+        # better for continuous featuer spaces
+        # very unstable
+        # critic net, actor net best for continous features spaces
+        # READ       https://arxiv.org/abs/1509.02971
+        # TODO - lower learning rate, gradient clipping
         fe = ft_extract.ContinuousFeaturesV2()
         agent = agents.PolicyGradients(fe, args.v,
                                epsilon=EXPLORATION_PROB,

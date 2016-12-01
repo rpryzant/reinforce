@@ -24,4 +24,5 @@ for cmd in tqdm(commands):
         os.wait()
         processes.difference_update([p for p in processes if p.poll() is not None])
 
-
+# and last but not least...generate the damn plot
+os.system("RScript test_scripts/generate_cumulative_plot.R")

@@ -478,7 +478,7 @@ class PolicyGradients(BaseAgent):
         self.input_dim = 5                   # input dimensionality
         self.batch_size = 10                 # num reward events (episodes) to process before actually applying gradient update
         self.learning_rate = 1e-4            # learning rate for rmsprop
-        self.rmsprop_decay = 0.9             # rmrprop decay rate
+        self.rmsprop_decay = 0.9             # rmsprop decay rate
 
         # init 2-layer neural net for policy network 
         # this is small but it's easy to scale up when we have things working. Plus, our input dimension is pretty damn small
