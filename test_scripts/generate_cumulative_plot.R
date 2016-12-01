@@ -23,8 +23,8 @@ random = cbind(
     randomBaseline.6$cum_score,
     randomBaseline.7$cum_score,
     randomBaseline.8$cum_score,
-    randomBaseline.9$cum_score
-    #randomBaseline.10$cum_score
+    randomBaseline.9$cum_score,
+    randomBaseline.10$cum_score
     )
 simpleQLearning = cbind(
   simpleQLearning.1$cum_score,
@@ -35,8 +35,8 @@ simpleQLearning = cbind(
   simpleQLearning.6$cum_score,
   simpleQLearning.7$cum_score,
   simpleQLearning.8$cum_score,
-  simpleQLearning.9$cum_score
-  #simpleQLearning.10$cum_score
+  simpleQLearning.9$cum_score,
+  simpleQLearning.10$cum_score
 )
 linearQ = cbind(
     linearQ.1$cum_score,
@@ -47,8 +47,8 @@ linearQ = cbind(
     linearQ.6$cum_score,
     linearQ.7$cum_score,
     linearQ.8$cum_score,
-    linearQ.9$cum_score
-    #linearQ.10$cum_score
+    linearQ.9$cum_score,
+    linearQ.10$cum_score
     )
 linearReplayQ = cbind(
     linearReplayQ.1$cum_score,
@@ -59,8 +59,8 @@ linearReplayQ = cbind(
     linearReplayQ.6$cum_score,
     linearReplayQ.7$cum_score,
     linearReplayQ.8$cum_score,
-    linearReplayQ.9$cum_score
-    #linearReplayQ.10$cum_score
+    linearReplayQ.9$cum_score,
+    linearReplayQ.10$cum_score
     )
 sarsa = cbind(
   sarsa.1$cum_score,
@@ -71,8 +71,8 @@ sarsa = cbind(
   sarsa.6$cum_score,
   sarsa.7$cum_score,
   sarsa.8$cum_score,
-  sarsa.9$cum_score
-  #sarsa.10$cum_score
+  sarsa.9$cum_score,
+  sarsa.10$cum_score
 )
 sarsaLambda = cbind(
     sarsaLambda.1$cum_score,
@@ -83,8 +83,8 @@ sarsaLambda = cbind(
     sarsaLambda.6$cum_score,
     sarsaLambda.7$cum_score,
     sarsaLambda.8$cum_score,
-    sarsaLambda.9$cum_score
-    #sarsaLambda.10$cum_score
+    sarsaLambda.9$cum_score,
+    sarsaLambda.10$cum_score
     )
 nn = cbind(
     nn.1$cum_score,
@@ -94,8 +94,8 @@ nn = cbind(
     nn.6$cum_score,
     nn.7$cum_score,
     nn.8$cum_score,
-    nn.9$cum_score
-    #nn.10$cum_score
+    nn.9$cum_score,
+    nn.10$cum_score
     )
 policyGradients = cbind(
   policyGradients.1$cum_score,
@@ -105,8 +105,8 @@ policyGradients = cbind(
   policyGradients.6$cum_score,
   policyGradients.7$cum_score,
   policyGradients.8$cum_score,
-  policyGradients.9$cum_score
-  #policyGradients.10$cum_score
+  policyGradients.9$cum_score,
+  policyGradients.10$cum_score
 )
 
 
