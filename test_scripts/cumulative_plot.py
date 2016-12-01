@@ -17,7 +17,7 @@ processes = set()
 # throw all commands in a list for tqdm
 commands = [command % (main_loc, player, games, player, i) for player in players for i in range(1, runs+1)]
 
-# run em all!
+# start consuming all the commands concurrently, running MAX_PROCESSES of them at a time
 for cmd in tqdm(commands):
     processes.add(subprocess.Popen(cmd, shell=True))
     if len(processes) >= MAX_PROCESSES:
