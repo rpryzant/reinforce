@@ -10,3 +10,7 @@ install:
 
 test:
 	./test_scripts/benchmark.sh
+
+
+cumulativeFig:
+	./test_scripts/make_cumulative_plots.sh
