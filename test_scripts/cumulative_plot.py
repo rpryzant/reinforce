@@ -24,8 +24,10 @@ for cmd in tqdm(commands):
         os.wait()
         processes.difference_update([p for p in processes if p.poll() is not None])
 
+####### THESE LAST TWO STEPS ARE NOW IN THE MAKEFILE
+
 # and last but not least...generate the damn plot
-os.system("RScript test_scripts/generate_cumulative_plot.R")
+#os.system("RScript test_scripts/generate_cumulative_plot.R")
 
 # actually last and probably least...clean up
-os.system("rm *.csv")
+#os.system("rm *.csv")

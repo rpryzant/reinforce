@@ -310,7 +310,6 @@ class SARSALambda(RLAgent):
 
 
 
-
 class NNAgent(BaseAgent):
     """Approximation using the NN
     """

@@ -14,3 +14,5 @@ test:
 
 cumulative:
 	python test_scripts/cumulative_plot.py
+	RScript test_scripts/generate_cumulative_plot.R
+#	rm *.csv

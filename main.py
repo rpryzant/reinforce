@@ -14,8 +14,8 @@ import src.feature_extractors as ft_extract
 
 def main(args, parser):
     # global parameters (can/should be changed)
-    EXPLORATION_PROB = 0.5
-    DISCOUNT = 0.993
+    EXPLORATION_PROB = 0.3
+    DISCOUNT = 0.995
 
 
     game = None
@@ -53,9 +53,9 @@ def main(args, parser):
                                              epsilon=EXPLORATION_PROB,
                                              gamma=DISCOUNT,
                                              stepSize=agents.RLAgent.inverseSqrt,
-                                             num_static_target_steps=750,
-                                             memory_size=2500, 
-                                             replay_sample_size=4)
+                                             num_static_target_steps=2000,
+                                             memory_size=10000, 
+                                             replay_sample_size=8)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsa':
@@ -72,8 +72,8 @@ def main(args, parser):
                                    epsilon=EXPLORATION_PROB,
                                    gamma=DISCOUNT,
                                    stepSize=agents.RLAgent.inverse,
-                                   threshold=0.1,
-                                   decay=0.98)       
+                                   threshold=0.03,
+                                   decay=0.99)       
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'nn':
