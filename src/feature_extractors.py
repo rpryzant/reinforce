@@ -151,8 +151,9 @@ class ContinuousFeaturesV2(FeatureExtractor):
     def __init__(self):
         super(ContinuousFeaturesV2, self).__init__()
         return
-    
-    def process_state(self, raw_state):
+
+    @staticmethod
+    def process_state(raw_state):
         state = defaultdict(int)
         # do this array assignment thing so that we can efficiently spit out complete feature 
         #   vectors. We can't use sparse vectors for NN and policy gradient training, as 
@@ -164,8 +165,6 @@ class ContinuousFeaturesV2(FeatureExtractor):
         state['pos_%s_moving_%s' % (relative_pos[1], movement_dir[0])] = 0
         state['pos_%s_moving_%s' % (relative_pos[0], movement_dir[1])] = 0
         state['pos_%s_moving_%s' % (relative_pos[1], movement_dir[1])] = 0
-
-
 
         return state
 
@@ -187,11 +186,14 @@ class ContinuousFeaturesV3(FeatureExtractor):
     def __init__(self):
         super(ContinuousFeaturesV3, self).__init__()
         return
-    
+
     def process_state(self, raw_state):
+        state = defaultdict(int)
         pos = raw_state['ball'].centerx - raw_state['paddle'].centerx
-        movement_dir = 'left' if raw_state['ball_vel'][0] < 0 else 'right' 
-        state['moving_%s' % (movement_dir)] = sigmoid(pos)
+        movement_dir = ['left', 'right'] if raw_state['ball_vel'][0] < 0 else ['right', 'left']
+        state['pos'] = sigmoid(pos)
+        state['moving_%s' % (movement_dir[0])] = 1
+        state['moving_%s' % (movement_dir[1])] = 0
         return state
 
     def get_features(self, raw_state, action):
@@ -210,7 +212,7 @@ class ContinuousFeaturesV4(FeatureExtractor):
     def __init__(self):
         super(ContinuousFeaturesV3, self).__init__()
         return
-    
+
     def process_state(self, raw_state):
         state = defaultdict(int)
         absolute_pos = discretizeLocation(raw_state['ball'].x, raw_state['ball'].y)
