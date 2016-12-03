@@ -61,7 +61,7 @@ class Breakout(object):
         self.paddle   = pygame.Rect(300,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT)
         self.ball     = pygame.Rect(300,PADDLE_Y - BALL_DIAMETER,BALL_DIAMETER,BALL_DIAMETER)
         self.ball_vel = [5, 5]    # [x, y]
-        self.game_over = False
+        self.game_won = False
         self.create_bricks()
 
         
@@ -159,6 +159,7 @@ class Breakout(object):
                 break
 
         if len(self.bricks) == 0:
+            self.score += 1000
             self.game_state = STATE_WON
             
         if self.ball.colliderect(self.paddle):
@@ -192,6 +193,9 @@ class Breakout(object):
             self.clock.tick(50)
             self.screen.fill(BLACK)
 
+        if self.game_won:
+            self.game_state = STATE_GAME_OVER
+
         if self.game_state == STATE_PLAYING:
             self.time += 1
             self.move_ball()
@@ -205,6 +209,7 @@ class Breakout(object):
             self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
         elif self.game_state == STATE_WON:
             self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
+            self.game_won = True
 
         self.boost_time = max(self.boost_time - 1, 0)
         
