@@ -111,14 +111,14 @@ policyGradients = cbind(
 
 
 cum.score.totals = cbind(
-  random[2000,], 
-  simpleQLearning[2000,],
-  linearQ[2000,],
-  linearReplayQ[2000,], 
-  sarsa[2000,], 
-  sarsaLambda[2000,], 
-  nn[2000,], 
-  policyGradients[2000,]
+  random[250,], 
+  simpleQLearning[250,],
+  linearQ[250,],
+  linearReplayQ[250,], 
+  sarsa[250,], 
+  sarsaLambda[250,], 
+  nn[250,], 
+  policyGradients[250,]
 )
 plt.las = 0
 plt.names = c(
@@ -134,7 +134,7 @@ plt.names = c(
 
 png(filename=paste(cur_dir, "/performance.png", sep=""), width=1000, height=750)
 #dev.new(width=5, height=4)
-boxplot(cum.score.totals, las=plt.las, names=plt.names, log="y", main="Relative Agent Performance over 20k Games",
+boxplot(cum.score.totals, las=plt.las, names=plt.names, log="y", main="Relative Agent Performance",
         ylab="log cumulative points", xlab="agent")
 dev.off()
 
