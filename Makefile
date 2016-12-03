@@ -1,3 +1,4 @@
+
 SHELL := /bin/bash
 
 
@@ -12,7 +13,13 @@ test:
 	./test_scripts/benchmark.sh
 
 
-cumulative:
-	python test_scripts/cumulative_plot.py
+train-cumulative:
+	python test_scripts/cumulative_plot.py train
+
+test-cumulative:
+	python test_scripts/cumulative_plot.py test
 	RScript test_scripts/generate_cumulative_plot.R
-#	rm *.csv
+
+clean:
+	rm *.csv *.log *.model
+
