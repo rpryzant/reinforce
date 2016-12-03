@@ -4,3 +4,5 @@
 *#
 model_params.txt
 *.csv
+*.model
+*.log
