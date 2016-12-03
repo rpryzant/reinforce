@@ -13,7 +13,7 @@ import tensorflow as tf
 import string
 # from function_approximators import *
 import random
-from feature_extractors import SimpleDiscreteFeatureExtractor as DiscreteFeaturizer
+from feature_extractors import ContinuousFeaturesV2 as DiscreteFeaturizer
 from replay_memory import ReplayMemory
 import copy
 from eligibility_tracer import EligibilityTrace
@@ -43,24 +43,20 @@ class BaseAgent(object):
         """reads model weights from file
             works kind of like an inverse of str()
         """
-        print 'reading weights from %s...' % path
         model_str = open(path, 'r').read()
         model_str = re.sub("<type '", "", model_str)
         model_str = re.sub("'>", "", model_str)
         model_str = string.replace(model_str, ',)', ')')
         model_str = re.sub("<function <lambda>[^\,]*", "lambda: defaultdict(float)", model_str)
         newWeights = eval(model_str)
-        print "read weights successfully!"
         return newWeights
 
-    def write_model(self, path, model):
+    def write_model(self, path, model=None):
         """writes a model to file
         """
-        print 'writing weights...'
         file = open(path, 'w')
         file.write(str(model))
         file.close()
-        print 'weights written!'
 
 
 
@@ -308,8 +304,6 @@ class SARSALambda(RLAgent):
 
 
 
-
-
 class NNAgent(BaseAgent):
     """Approximation using the NN
     """
@@ -321,6 +315,7 @@ class NNAgent(BaseAgent):
         self.getStepSize = stepSize
         self.numIters = 1
 
+#        self.feature_len = 11
         self.feature_len = 5
         self.input_placeholder, self.target_placeholder, self.loss, \
             self.train_step, self.sess, self.output, self.merged, self.log_writer = \
@@ -712,10 +707,10 @@ class DiscreteQLearning(BaseAgent):
 
 
     def read_model(self, path):
-        self.Q_values = super(DiscreteQLearningAgent, self).read_model(path)
+        self.Q_values = super(DiscreteQLearning, self).read_model(path)
 
     def write_model(self, path):
-        super(DiscreteQLearningAgent, self).write_model(path, self.Q_values)
+        super(DiscreteQLearning, self).write_model(path, self.Q_values)
 
 
 

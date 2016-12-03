@@ -15,7 +15,6 @@ class EligibilityTrace(object):
         self.data = defaultdict(float)
 
     def __getitem__(self, key):
-        print self.decay
         return self.data[key]
 
     def __setitem__(self, key, val):

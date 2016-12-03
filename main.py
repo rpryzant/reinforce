@@ -14,8 +14,8 @@ import src.feature_extractors as ft_extract
 
 def main(args, parser):
     # global parameters (can/should be changed)
-    EXPLORATION_PROB = 0.3
-    DISCOUNT = 0.995
+    EXPLORATION_PROB = args.e
+    DISCOUNT = 0.993
 
 
     game = None
@@ -53,9 +53,9 @@ def main(args, parser):
                                              epsilon=EXPLORATION_PROB,
                                              gamma=DISCOUNT,
                                              stepSize=agents.RLAgent.inverseSqrt,
-                                             num_static_target_steps=2000,
-                                             memory_size=10000, 
-                                             replay_sample_size=8)
+                                             num_static_target_steps=750,
+                                             memory_size=5000, 
+                                             replay_sample_size=4)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsa':
@@ -72,8 +72,8 @@ def main(args, parser):
                                    epsilon=EXPLORATION_PROB,
                                    gamma=DISCOUNT,
                                    stepSize=agents.RLAgent.inverse,
-                                   threshold=0.03,
-                                   decay=0.99)       
+                                   threshold=0.1,
+                                   decay=0.98)       
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'nn':
@@ -129,6 +129,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', type=int, default=1, help="num batch iterations (defaults to 1)")
     parser.add_argument('-wr', type=str, help="write model to file when done")
     parser.add_argument('-rd', type=str, help="read model parameters from file")
+    parser.add_argument('-e', type=float, default=0.3, help="epsilon (exploration prob)")
     args = parser.parse_args()
     args.func(args, parser)
 
