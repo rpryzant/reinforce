@@ -209,6 +209,8 @@ class Breakout(object):
             self.show_message("GAME OVER. PRESS ENTER TO PLAY AGAIN")
         elif self.game_state == STATE_WON:
             self.show_message("YOU WON! PRESS ENTER TO PLAY AGAIN")
+            # little hack to make game go for one more step after a win
+            # (give online agents time to realize it's one and do an update)
             self.game_won = True
 
         self.boost_time = max(self.boost_time - 1, 0)
