@@ -18,6 +18,9 @@ MAX_PROCESSES = 4
 main_loc = os.path.abspath("main.py")
 processes = set()
 
+memories = [100, 1000, 5000, 10000]
+samples = [4, 8, 16]
+
 
 train_cmd = "python %s -p linearReplayQ -b %s -e %d -memory_size %d -sample_size %d -wr linearReplayQ-%s.model > linearReplayQ-%s.log"
 
