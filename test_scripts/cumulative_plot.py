@@ -8,8 +8,8 @@ import sys
 run_type = sys.argv[1]
 
 # test configuration
-games = 1000
-runs = 10
+games = 2000
+runs = 64
 players = ["randomBaseline", "simpleQLearning", "linearQ", "linearReplayQ", "sarsa", "sarsaLambda", "nn", "policyGradients"]
 
 # multithreading configuration
@@ -20,7 +20,7 @@ processes = set()
 
 
 if run_type == 'train':
-    train_cmd = "python %s -p %s -b %s -e 0.5 -wr %s-%s.model > %s-%s.log"
+    train_cmd = "python %s -p %s -b %s -e 0.3 -wr %s-%s.model > %s-%s.log"
 
     # start consuming all the training commands concurrently, running MAX_PROCESSES of them at a time
     print "TRAINING..."
@@ -34,7 +34,7 @@ if run_type == 'train':
 
 
 elif run_type == 'test':
-    test_cmd = "python %s -p %s -b %s -e 0.05 -rd %s-%s.model -csv > %s-%s.csv"
+    test_cmd = "python %s -p %s -b %s -e 0.01 -rd %s-%s.model -csv > %s-%s.csv"
 
     # then consume all test commands
     print "TESTING..."

@@ -16,6 +16,8 @@ def main(args, parser):
     # global parameters (can/should be changed)
     EXPLORATION_PROB = args.e
     DISCOUNT = 0.993
+    memory_size = args.memory_size or 5000
+    sample_size = args.sample_size or 4
 
 
     game = None
@@ -53,9 +55,9 @@ def main(args, parser):
                                              epsilon=EXPLORATION_PROB,
                                              gamma=DISCOUNT,
                                              stepSize=agents.RLAgent.inverseSqrt,
-                                             num_static_target_steps=750,
-                                             memory_size=5000, 
-                                             replay_sample_size=4)
+                                             num_static_target_steps=500,
+                                             memory_size=memory_size, 
+                                             replay_sample_size=sample_size)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'sarsa':
@@ -130,6 +132,8 @@ if __name__ == "__main__":
     parser.add_argument('-wr', type=str, help="write model to file when done")
     parser.add_argument('-rd', type=str, help="read model parameters from file")
     parser.add_argument('-e', type=float, default=0.3, help="epsilon (exploration prob)")
+    parser.add_argument('-memory_size', type=int, help="replay memory size")
+    parser.add_argument('-sample_size', type=int, help="replay sample size")
     args = parser.parse_args()
     args.func(args, parser)
 
