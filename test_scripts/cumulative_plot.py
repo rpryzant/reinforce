@@ -8,7 +8,7 @@ import sys
 run_type = sys.argv[1]
 
 # test configuration
-games = 2000
+games = 4000
 runs = 64
 players = ["randomBaseline", "simpleQLearning", "linearQ", "linearReplayQ", "sarsa", "sarsaLambda", "nn", "policyGradients"]
 
@@ -38,7 +38,7 @@ elif run_type == 'test':
 
     # then consume all test commands
     print "TESTING..."
-    test_commands = [test_cmd % (main_loc, player, games / 4, player, i, player, i) for player in players for i in range(1, runs+1)]
+    test_commands = [test_cmd % (main_loc, player, games / 2, player, i, player, i) for player in players for i in range(1, runs+1)]
     for cmd in tqdm(test_commands):
         print '\t' + cmd
         processes.add(subprocess.Popen(cmd, shell=True))
