@@ -8,9 +8,14 @@ print sys.argv
 # make {run type => [cumulative scores]} mapping
 d = collections.defaultdict(list)
 for file in sys.argv[1:]:
-    file_type = '-'.join(file.split('-')[2:])
+    print file
+#    for replay files
+#    file_type = '-'.join(file.split('-')[2:])
+#    for cross-agent files
+    file_type = file.split('-')[0]
     cumulative_score = open(file).readlines()[-1].split(',')[0]
     d[file_type].append(cumulative_score)
+
 
 # make csv with cumulative scores for each run type as columns
 score_matrix = d.items()
