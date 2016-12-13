@@ -9,10 +9,10 @@ print sys.argv
 d = collections.defaultdict(list)
 for file in sys.argv[1:]:
     print file
-#    for replay files
-#    file_type = '-'.join(file.split('-')[2:])
+#    for replay and lambda files
+    file_type = '-'.join(file.split('-')[2:])
 #    for cross-agent files
-    file_type = file.split('-')[0]
+#    file_type = file.split('-')[0]
     cumulative_score = open(file).readlines()[-1].split(',')[0]
     d[file_type].append(cumulative_score)
 

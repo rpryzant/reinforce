@@ -48,7 +48,8 @@ def main(args, parser):
         agent = agents.QLearning(fe, 
                                  epsilon=EXPLORATION_PROB,
                                  gamma=DISCOUNT,
-                                 stepSize=agents.RLAgent.inverseSqrt)        
+                                 stepSize=agents.RLAgent.constant(0.001))
+        agent.setStepSize(0.001)
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'linearReplayQ':

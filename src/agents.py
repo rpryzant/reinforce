@@ -104,10 +104,14 @@ class RLAgent(BaseAgent):
 
     ####################################
     # step size functions
+    # return a wee lil lambda function so that you can still initialize agents with this method:
+    #     e.g. stepSize=agents.RLAgent.constant(0.001)
+    # Because later getStepSize will be called with the number of iterations and we want
+    #   to throw that away
     @staticmethod
-    def constant(numIters):
+    def constant(stepSize):
         """constant step size"""
-        return self.stepSize
+        return lambda x: stepSize
 
     @staticmethod
     def inverse(numIters):
