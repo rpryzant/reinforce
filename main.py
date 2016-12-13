@@ -19,6 +19,8 @@ def main(args, parser):
     memory_size = args.memory_size or 5000
     sample_size = args.sample_size or 4
 
+    trace_threshold = args.trace_threshold or 0.1
+    trace_decay = args.trace_decay or 0.98
 
     game = None
     if args.p == "human":
@@ -74,8 +76,8 @@ def main(args, parser):
                                    epsilon=EXPLORATION_PROB,
                                    gamma=DISCOUNT,
                                    stepSize=agents.RLAgent.inverse,
-                                   threshold=0.1,
-                                   decay=0.98)       
+                                   threshold=trace_threshold,
+                                   decay=trace_decay)       
         game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == 'nn':
@@ -134,6 +136,8 @@ if __name__ == "__main__":
     parser.add_argument('-e', type=float, default=0.3, help="epsilon (exploration prob)")
     parser.add_argument('-memory_size', type=int, help="replay memory size")
     parser.add_argument('-sample_size', type=int, help="replay sample size")
+    parser.add_argument('-trace_threshold', type=float, help="eligibility trace threshold")
+    parser.add_argument('-trace_decay', type=float, help="eligilbility trace decay (lambda)")
     args = parser.parse_args()
     args.func(args, parser)
 
