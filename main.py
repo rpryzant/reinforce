@@ -22,17 +22,45 @@ def main(args, parser):
     trace_threshold = args.trace_threshold or 0.1
     trace_decay = args.trace_decay or 0.98
 
+    # stoopid stoopid argument parsing but idgaf
+    step_size = args.step_size or 0.001
+    if step_size == 'inv_sqrt':
+        step_size = agents.RLAgent.inverseSqrt
+    elif step_size == 'inv':
+        step_size = agents.RLAgent.inverse
+    else:
+        step_size = agents.RLAgent.constant(float(step_size))
+
+    # more stoopid stuff
+    feature_set = args.feature_set or None
+    if feature_set == 'v1':
+        feature_set = ft_extract.ContinuousFeaturesV1()
+    elif feature_set == 'v2':
+        feature_set = ft_extract.ContinuousFeaturesV2()
+    elif feature_set == 'v3':
+        feature_set = ft_extract.ContinuousFeaturesV3()
+    elif feature_set == 'v4':
+        feature_set = ft_extract.ContinuousFeaturesV4()
+    elif feature_set == 'v5':
+        feature_set = ft_extract.ContinuousFeaturesV5()
+    elif feature_set == 'v6':
+        feature_set = ft_extract.ContinuousFeaturesV6()
+    else:
+        # default to v2. cause it seems to work best
+        feature_set = ft_extract.ContinuousFeaturesV2()
+
+
+
+
     game = None
     if args.p == "human":
         game = breakout.HumanControlledBreakout(args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == "followBaseline":
         agent = agents.FollowBaseline()
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == "randomBaseline":
         agent = agents.RandomBaseline()
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
     elif args.p == "oracle":
         game = breakout.OracleControlledBreakout(args.csv, args.v, args.d, args.b, args.wr)
@@ -40,69 +68,49 @@ def main(args, parser):
     elif args.p == 'simpleQLearning':
         agent = agents.DiscreteQLearning(gamma=DISCOUNT,
                                          epsilon=EXPLORATION_PROB,
-                                         stepSize=0.001)
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
+                                         stepSize=step_size)
     elif args.p == 'linearQ':
-        fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.QLearning(fe, 
+        agent = agents.QLearning(feature_set, 
                                  epsilon=EXPLORATION_PROB,
                                  gamma=DISCOUNT,
-                                 stepSize=agents.RLAgent.constant(0.001))
-        agent.setStepSize(0.001)
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
+                                 stepSize=step_size)
     elif args.p == 'linearReplayQ':
-        fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.QLearningReplayMemory(fe,
+        agent = agents.QLearningReplayMemory(feature_set,
                                              epsilon=EXPLORATION_PROB,
                                              gamma=DISCOUNT,
-                                             stepSize=agents.RLAgent.inverseSqrt,
+                                             stepSize=step_size,
                                              num_static_target_steps=500,
                                              memory_size=memory_size, 
                                              replay_sample_size=sample_size)
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
     elif args.p == 'sarsa':
-        fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.SARSA(fe,
+        agent = agents.SARSA(feature_set,
                              epsilon=EXPLORATION_PROB,
                              gamma=DISCOUNT,
-                             stepSize=agents.RLAgent.inverse)
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
+                             stepSize=step_size)
     elif args.p == 'sarsaLambda':
-        fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.SARSALambda(fe,
+        agent = agents.SARSALambda(feature_set,
                                    epsilon=EXPLORATION_PROB,
                                    gamma=DISCOUNT,
-                                   stepSize=agents.RLAgent.inverse,
+                                   stepSize=step_size,
                                    threshold=trace_threshold,
                                    decay=trace_decay)       
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
     elif args.p == 'nn':
         # TODO - FEED IN CONTINUOUS/RAW DATA
         #         might not help as much because already has higher level features
-        fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.NNAgent(fe, args.v,
+        agent = agents.NNAgent(feature_set, args.v,
                                epsilon=EXPLORATION_PROB,
                                gamma=DISCOUNT,
-                               stepSize=0.001)        
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
-
+                               stepSize=step_size)        
     elif args.p == 'policyGradients':
         # better for continuous featuer spaces
         # very unstable
         # critic net, actor net best for continous features spaces
         # READ       https://arxiv.org/abs/1509.02971
         # TODO - lower learning rate, gradient clipping
-        fe = ft_extract.ContinuousFeaturesV2()
-        agent = agents.PolicyGradients(fe, args.v,
+        agent = agents.PolicyGradients(feature_set, args.v,
                                epsilon=EXPLORATION_PROB,
                                gamma=DISCOUNT,
-                               stepSize=0.001)  
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
+                               stepSize=step_size)  
 
 
 
@@ -115,8 +123,9 @@ def main(args, parser):
                                epsilon=EXPLORATION_PROB,
                                gamma=DISCOUNT,
                                stepSize=0.001)  
-        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
+    if args.p not in ['human', 'oracle']:
+        game = breakout.BotControlledBreakout(agent, args.csv, args.v, args.d, args.b, args.wr, args.rd)
 
 
     game.run()
@@ -139,6 +148,8 @@ if __name__ == "__main__":
     parser.add_argument('-sample_size', type=int, help="replay sample size")
     parser.add_argument('-trace_threshold', type=float, help="eligibility trace threshold")
     parser.add_argument('-trace_decay', type=float, help="eligilbility trace decay (lambda)")
+    parser.add_argument('-feature_set', type=str, help='what kind of feature set do you wanna use yo')
+    parser.add_argument('-step_size', type=str, help='what kind of step size (function) do you wanna use')
     args = parser.parse_args()
     args.func(args, parser)
 

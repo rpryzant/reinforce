@@ -210,7 +210,7 @@ class ContinuousFeaturesV3(FeatureExtractor):
 class ContinuousFeaturesV4(FeatureExtractor):
     # doesn't do to hot...i'm thinking it doesn't have enough training time...
     def __init__(self):
-        super(ContinuousFeaturesV3, self).__init__()
+        super(ContinuousFeaturesV4, self).__init__()
         return
 
     def process_state(self, raw_state):
