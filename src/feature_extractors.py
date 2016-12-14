@@ -7,6 +7,7 @@ from constants import *
 from collections import defaultdict
 from utils import *
 from copy import deepcopy
+import math
 
 class FeatureExtractor(object):
     def __init__(self):
@@ -191,7 +192,7 @@ class ContinuousFeaturesV3(FeatureExtractor):
         state = defaultdict(int)
         pos = raw_state['ball'].centerx - raw_state['paddle'].centerx
         movement_dir = ['left', 'right'] if raw_state['ball_vel'][0] < 0 else ['right', 'left']
-        state['pos'] = sigmoid(pos)
+        state['pos'] = math.tanh(pos)
         state['moving_%s' % (movement_dir[0])] = 1
         state['moving_%s' % (movement_dir[1])] = 0
         return state
