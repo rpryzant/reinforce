@@ -1,0 +1,1 @@
+defaultdict(<function <lambda> at 0x1137da230>, {'pos_left_moving_left|pos_left_moving_right|pos_right_moving_left|pos_right_moving_right': defaultdict(<type 'float'>, {('R',): -0.10546862916480655, ('L',): -0.10040127930046899, (): -0.05795746529017394, ('sp',): 2.6327021056647246e-08})})
