@@ -17,22 +17,6 @@ getwd()
 #data = read.csv("multiple_runs.csv")
 data= read.csv("1000_test_games.csv")
 
-data$X100.4.csv = data$X100.4.csv * 0.9
-data$X100.8.csv = data$X100.8.csv * 0.9
-data$X100.16.csv = data$X100.16.csv * 0.9
-
-data$X1000.4.csv = data$X1000.4.csv * 0.93
-data$X1000.8.csv = data$X1000.8.csv * 0.94
-data$X1000.16.csv = data$X1000.16.csv * 0.97
-
-data$X5000.4.csv = data$X5000.4.csv * 0.95
-data$X5000.8.csv = data$X5000.8.csv * 0.95
-data$X5000.16.csv = data$X5000.16.csv * 0.96
-
-data$X10000.4.csv = data$X10000.4.csv * 0.98
-data$X10000.8.csv = data$X10000.8.csv * 0.98
-data$X10000.16.csv = data$X10000.16.csv * 0.99
-
 
 #data = data / 500
 data = data / 2000
