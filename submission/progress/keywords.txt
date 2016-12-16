@@ -1,0 +1,8 @@
+reinforcement learning
+q learning
+breakout
+atari
+neural networks
+logistic regression
+function approximation
+experience replay
