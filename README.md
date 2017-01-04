@@ -1,60 +1,96 @@
-## Final project for cs221 - AI
+### Introduction
 
-### project description
-* algo: Q Learning with function approximation? policy gradients?
-* off policy learning from multiple exploratory policies (one per thread)
-* off policy learning on previous/stale policies? (bootstrap on policy)
-* use q learning for off policy learning: next action is chosen using behavior policy, also consider altertative successor action drawn from foreign policy. Bootstrap on this alternative successor action. Target policy should be **greedy** w.r.t Q, behavior policy should be **epsilon-greedy** with respect to Q
-* different kinds of function approximators? (neural net, logistic regression, etc)
-  * td(0), td(lambda), backward view td, mc
-* state vector should include notion of actions!!!
-* radial basis, course coding for function approximators?
-* do TD, find best lambda value?
-* use experience replay - store experience (state, value) pairs
-  * **LECTURE 6 1:18!!** 
-  * experience replay is good because it decorrelates trajectories
-  * use old params for target calculation for more stable update
-    * experiment with smooth interpolation between old, fresh weights? (papers swap weights every once in a while)
-* if we have a small feature space, use linear least squares prediction to get to weights in one sep
-* least squares policy iteration
+
+This repo contains a custom implementation of the classic Atari game Breakout. You can play the game if you want, or use one of the provided reinforcement learning algorithms to teach your computer how to play for you.
+
+At its heart, this system contains an implementation of the DQN with experience replay algorithm outlined in [Minh, et. al](http://www.davidqiu.com:8888/research/nature14236.pdf). The overlap isn't perfect, though. The Google paper didn't compare DQN with policy gradients. This system doesn't make use of a convolutional network.
+
+### Algorithms Implemented
+
+* Discrete Q-learning
+* Deep Q-learning (DQN)
+* Linear Q-learning
+* SARSA
+* SARSA(lambda)
+* Policy Gradients
 
 
 
-## Questions for percy
-* we should be doing model free learning, right?
-* what to use as states? need to capture 
-  * paddle pos
-  * ball pos & movement
-  * remaining brick positions
-  * discretize state space for ball pos + movement? (called *tile coding*)
-* will q-learning be enough? big(ish) temporal difference between good action (hitting ball w right angle) and reward (points)
+
+### Results
 
 
 
-## inspiration/resources
-* rl textbook: https://webdocs.cs.ualberta.ca/~sutton/book/ebook/the-book.html
-* reinforcement learning lectures/articles/notes
-  * http://cs229.stanford.edu/notes/cs229-notes12.pdf
-  * https://www.nervanasys.com/demystifying-deep-reinforcement-learning/
-  * https://www.nervanasys.com/deep-reinforcement-learning-with-neon/
-  * stanford
-    * https://www.youtube.com/watch?v=RtxI449ZjSc
-    * https://www.youtube.com/watch?v=LKdFTsM3hl4
-    * https://www.youtube.com/watch?v=-ff6l5D8-j8
-  * berkeley
-    * https://www.youtube.com/watch?v=IXuHxkpO5E8
-    * https://www.youtube.com/watch?v=yNeSFbE1jdY
-  * deepmind course
-    * http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching.html
-* a group last year did reinforcement learning
-  * http://web.stanford.edu/class/cs221/restricted/projects/piq93/final.pdf
-  * http://web.stanford.edu/class/cs221/restricted/projects/piq93/poster.pdf
-* various ML groups have done reinforcement learning
-  * http://cs229.stanford.edu/proj2015/362_report.pdf
-  * http://cs229.stanford.edu/proj2015/362_poster.pdf
-  * http://cs229.stanford.edu/proj2014/Shuhui%20Qu,%20Tian%20Tan,Zhihao%20Zheng,%20Reinforcement%20Learning%20With%20Deeping%20Learning%20in%20Pacman.pdf
-  * http://cs229.stanford.edu/proj2013/CamDembiaIsraeli-RLBicycle.pdf
-  * http://cs229.stanford.edu/proj2012/BodoiaPuranik-ApplyingReinforcementLearningToCompetitiveTetris.pdf
-  * http://cs229.stanford.edu/proj2012/LiaoYiYang-RLtoPlayMario.pdf
-* Google deepmind did breakout
-  * https://arxiv.org/pdf/1312.5602.pdf
+
+
+### Dependancies
+
+* tensorflow
+```
+export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/gpu/tensorflow_gpu-0.12.1-py3-none-any.whl
+sudo pip install --upgrade $TF_BINARY_URL
+```
+* pygame
+```
+hg clone https://bitbucket.org/pygame/pygame
+cd pygame
+python setup.py build
+sudo python setup.py install
+```
+* numpy
+```
+sudo pip install numpy
+```
+* tqdm
+```
+sudo pip install tqdm
+```
+
+### Example usage
+
+Run some benchmarks:
+`$ make test`
+
+Run a breakout game and play it for yourself:
+`$ python main.py -p human -d -b 50`
+
+Train a Q-learning agent on 500 games:
+`$ python main.py -p linearQ -b 500 -e 0.3 -wr myModel.model`
+
+Test that agent, watch it play, and print out stats as you go
+`$ python main.py -p linearQ -b 500 -e 0.0 -d -rd myModel.model -csv`
+
+### Directory structure
+
+* [main.py](https://github.com/rpryzant/deep_rl_project/blob/master/main.py)  -- driver code for running games and agents
+* [Makefile](https://github.com/rpryzant/deep_rl_project/blob/master/Makefile) -- makefile
+* [src/](https://github.com/rpryzant/deep_rl_project/tree/master/src)
+  * [__init__.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/__init__.py) -- duh
+  * [agents.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/agents.py) -- logic for reinforcement learning algorithms
+  * [constants.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/constants.py) -- constants
+  * [eligibility_tracer.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/elegibility_tracer.py) -- sarsa lambda eligibility trace
+  * [feature_extractors.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/feature_extractors.py) -- featuresets
+  * [game_engine.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/game_engine.py) -- breakout implementation, control loop
+  * [replay_memory.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/replay_memory.py) -- Q-learning replay memory
+  * [utils.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/utils.py) -- utility ops: matrix operations, vector arithmatic, etc
+* [test_scripts/](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts)
+  * [benchmark.sh](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/benchmark.sh) -- test script we used to benchmark learners during development
+   * [combine_csvs.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/combine_csvs.py) -- glues together logfiles for analysis
+   * [cumulative_plot.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/cumulative_plot.py) -- multithreaded testbed for fig 3
+   * [features_learning_rates.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/features_learning_rates.py) -- multithreaded testbed for features and learning rates
+   * [learning_speeds.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/learning_speeds.py) -- testbed for learning speeds
+   * [replay_statistics.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/replay_statistics.py) -- replay memory analysis script
+    * [sarsa_lambda_stats.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/sarsa_lambda_stats.py) -- SARSA(lambda) analysis script
+
+        
+
+### Reading list
+
+* [Human-level control through deep reinforcement
+learning](http://www.davidqiu.com:8888/research/nature14236.pdf)
+* [Reinforcement Learning and Control](http://cs229.stanford.edu/notes/cs229-notes12.pdf)
+* [UL course on RL](http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching.html)
+* [Deep Reinforcement Learning: Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
+* [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/1312.5602.pdf)
+
+
