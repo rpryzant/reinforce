@@ -19,8 +19,8 @@ At its heart, this system contains an implementation of the DQN with experience 
 
 ### Results
 
-
-
+![agent performance](/static/3.png)
+Test performance of each learning algorithm. Performance is measured in average points per game after training on 2000 games. The baseline is a computerized agent that acts randomly. 
 
 
 ### Dependancies
@@ -49,16 +49,24 @@ sudo pip install tqdm
 ### Example usage
 
 Run some benchmarks:
+
 `$ make test`
 
 Run a breakout game and play it for yourself:
+
 `$ python main.py -p human -d -b 50`
 
 Train a Q-learning agent on 500 games:
+
 `$ python main.py -p linearQ -b 500 -e 0.3 -wr myModel.model`
 
 Test that agent, watch it play, and print out stats as you go
+
 `$ python main.py -p linearQ -b 500 -e 0.0 -d -rd myModel.model -csv`
+
+Load up a SARSA agent that's been pre-trained on 2000 games:
+
+`$ python main.py -p sarsa -b 500 -e 0.0 -d -rd static/example_sarsa_params.model -csv`
 
 ### Directory structure
 
@@ -74,9 +82,9 @@ Test that agent, watch it play, and print out stats as you go
   * [replay_memory.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/replay_memory.py) -- Q-learning replay memory
   * [utils.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/utils.py) -- utility ops: matrix operations, vector arithmatic, etc
 * [test_scripts/](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts)
-  * [benchmark.sh](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/benchmark.sh) -- test script we used to benchmark learners during development
+  * [benchmark.sh](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/benchmark.sh) -- test script used to benchmark learners during development
    * [combine_csvs.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/combine_csvs.py) -- glues together logfiles for analysis
-   * [cumulative_plot.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/cumulative_plot.py) -- multithreaded testbed for fig 3
+   * [cumulative_plot.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/cumulative_plot.py) -- multithreaded testbed for cumulative agent performance
    * [features_learning_rates.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/features_learning_rates.py) -- multithreaded testbed for features and learning rates
    * [learning_speeds.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/learning_speeds.py) -- testbed for learning speeds
    * [replay_statistics.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/replay_statistics.py) -- replay memory analysis script
