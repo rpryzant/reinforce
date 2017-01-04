@@ -81,14 +81,7 @@ Load up a SARSA agent that's been pre-trained on 2000 games:
   * [game_engine.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/game_engine.py) -- breakout implementation, control loop
   * [replay_memory.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/replay_memory.py) -- Q-learning replay memory
   * [utils.py](https://github.com/rpryzant/deep_rl_project/blob/master/src/utils.py) -- utility ops: matrix operations, vector arithmatic, etc
-* [test_scripts/](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts)
-  * [benchmark.sh](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/benchmark.sh) -- test script used to benchmark learners during development
-   * [combine_csvs.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/combine_csvs.py) -- glues together logfiles for analysis
-   * [cumulative_plot.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/cumulative_plot.py) -- multithreaded testbed for cumulative agent performance
-   * [features_learning_rates.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/features_learning_rates.py) -- multithreaded testbed for features and learning rates
-   * [learning_speeds.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/learning_speeds.py) -- testbed for learning speeds
-   * [replay_statistics.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/replay_statistics.py) -- replay memory analysis script
-    * [sarsa_lambda_stats.py](https://github.com/rpryzant/deep_rl_project/tree/master/test_scripts/sarsa_lambda_stats.py) -- SARSA(lambda) analysis script
+
 
         
 
