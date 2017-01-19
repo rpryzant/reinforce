@@ -1,18 +1,24 @@
 ### Introduction
 
+![breakout](/static/breakout.png)
 
-This repo contains a custom implementation of the classic Atari game Breakout. You can play the game if you want, or use one of the provided reinforcement learning algorithms to teach your computer how to play for you.
+
+This repo contains a custom implementation of the classic Atari game Breakout (screenshot above). You can play the game if you want, or use one of the provided reinforcement learning algorithms to teach your computer how to play for you.
 
 At its heart, this system contains an implementation of the DQN with experience replay algorithm outlined in [Minh, et. al](http://www.davidqiu.com:8888/research/nature14236.pdf). The overlap isn't perfect, though. The Google paper didn't compare DQN with policy gradients. This system doesn't make use of a convolutional network.
 
 ### Algorithms Implemented
 
-* Discrete Q-learning
-* Deep Q-learning (DQN)
-* Linear Q-learning
-* SARSA
-* SARSA(lambda)
-* Policy Gradients
+
+
+| Algorithm | Publication | Status |
+| :-------- | :---------: | :----- |
+| Linear Q-Learning | Watkins et al. 1992 ([PDF](http://download.springer.com/static/pdf/35/art%253A10.1007%252FBF00992698.pdf?originUrl=http%3A%2F%2Flink.springer.com%2Farticle%2F10.1007%2FBF00992698&token2=exp=1484853031~acl=%2Fstatic%2Fpdf%2F35%2Fart%25253A10.1007%25252FBF00992698.pdf%3ForiginUrl%3Dhttp%253A%252F%252Flink.springer.com%252Farticle%252F10.1007%252FBF00992698*~hmac=8b2a67e9c37a7e9f09f368c1acb1bb91eb0ee728e627bd99f56fb670f4c8d724)) | Working.|
+| Deep Q-Learning (DQN) | Minh et. al 2015 ([PDF](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf)) | Working. |
+| SARSA & SARSA(lambda) | Sutton 1996 ([PDF](https://webdocs.cs.ualberta.ca/~sutton/papers/sutton-96.pdf)) | Working. |
+| Deep Policy Gradients | Zhang et al. 2015 ([PDF](https://arxiv.org/pdf/1507.01273v2.pdf)) | Working. |
+
+
 
 
 
