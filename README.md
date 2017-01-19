@@ -1,11 +1,13 @@
 ### Introduction
 
-![breakout](/static/breakout.png)
 
 
 This repo contains a custom implementation of the classic Atari game Breakout (screenshot above). You can play the game if you want, or use one of the provided reinforcement learning algorithms to teach your computer how to play for you.
 
 At its heart, this system contains an implementation of the DQN with experience replay algorithm outlined in [Minh, et. al](http://www.davidqiu.com:8888/research/nature14236.pdf). The overlap isn't perfect, though. The Google paper didn't compare DQN with policy gradients. This system doesn't make use of a convolutional network.
+
+<img src="/static/breakout.png" width="450">
+
 
 ### Algorithms Implemented
 
